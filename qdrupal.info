@@ -1,0 +1,5 @@
+; $Id$
+name = QDrupal Core
+description = Integration layer between Qcodo and Drupal
+package = QDrupal
+version = 0.3.x

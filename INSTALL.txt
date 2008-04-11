@@ -1,0 +1,26 @@
+INSTALL INSTRUCTIONS
+
+REQUIREMENTS
+	Drupal 5.X
+	PHP 5
+	MySQLi Extension Enabled
+
+INSTALL
+	1. Download QDrupal.
+
+	2. Extract QDrupal to your Drupal Modules folder, either /modules/ or
+	/sites/all/modules/.
+
+	3. If you are not using the mysqli extension in Drupal, change your
+	/sites/defualt/settings.php file to enable the mysqli extension.
+
+	ie. From: 
+		$db_url = 'mysql://username:password@localhost/databasename';
+		To: (notice the little i)
+		$db_url = 'mysqli://username:password@localhost/databasename';
+
+	4. Navigate to Admin -> Site Building -> Modules and enable the
+	QDrupal module.
+
+	5. Click on the QDrupal item in the main Navigation menu for
+	information on how to create QDrupal Forms.
