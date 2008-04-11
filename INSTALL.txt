@@ -3,7 +3,6 @@ INSTALL INSTRUCTIONS
 REQUIREMENTS
 	Drupal 5.X
 	PHP 5
-	MySQLi Extension Enabled
 
 INSTALL
 	1. Download QDrupal.
@@ -11,16 +10,18 @@ INSTALL
 	2. Extract QDrupal to your Drupal Modules folder, either /modules/ or
 	/sites/all/modules/.
 
-	3. If you are not using the mysqli extension in Drupal, change your
-	/sites/defualt/settings.php file to enable the mysqli extension.
+  3. Download Zcodo from http://zcodo.com and extract it into the
+  qdrupal folder.  Ensure that the subfolder name is 'zcodo'.
 
-	ie. From: 
-		$db_url = 'mysql://username:password@localhost/databasename';
-		To: (notice the little i)
-		$db_url = 'mysqli://username:password@localhost/databasename';
+  ie. /qdrupal/
+        /zcodo/  <-- The Zcodo library must be extracted and placed here
 
-	4. Navigate to Admin -> Site Building -> Modules and enable the
+  4. Copy the contents of the 'zcodo_overrides' folder into the Zcodo
+  folder.  The directory structure has already been provided to ensure
+  that the files end up in their correct locations.
+
+	5. Navigate to Admin -> Site Building -> Modules and enable the
 	QDrupal module.
 
-	5. Click on the QDrupal item in the main Navigation menu for
-	information on how to create QDrupal Forms.
+	6. Create a new QDrupal Application through the Create Content menu
+  item.
