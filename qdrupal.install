@@ -54,7 +54,7 @@ function qdrupal_install() {
       db_query("CREATE TABLE {qdrupal_setting} (
         nid int_unsigned NOT NULL DEFAULT '0',
         name VARCHAR(128),
-        settings TEXT,
+        setting TEXT,
         PRIMARY KEY (nid)
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       db_query("CREATE TABLE {qdrupal_link} (
