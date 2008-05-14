@@ -4,77 +4,126 @@
  * Implementation of hook_install().
  */
 function qdrupal_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("CREATE TABLE {qdrupal_application} (
-        vid INT UNSIGNED NOT NULL DEFAULT '0',
-        nid INT UNSIGNED NOT NULL DEFAULT '0',
-        shortname VARCHAR(50) NOT NULL,
-        PRIMARY KEY (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE TABLE {qdrupal_node} (
-        vid INT UNSIGNED NOT NULL DEFAULT '0',
-        nid INT UNSIGNED NOT NULL DEFAULT '0',
-        application_id INT UNSIGNED NOT NULL DEFAULT '0',
-        type VARCHAR(20),
-        PRIMARY KEY (vid),
-        KEY nid (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE TABLE {qdrupal_setting} (
-        nid INT UNSIGNED NOT NULL DEFAULT '0',
-        name VARCHAR(128),
-        setting TEXT,
-        PRIMARY KEY (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE TABLE {qdrupal_link} (
-        vid INT UNSIGNED NOT NULL ,
-        nid INT UNSIGNED NOT NULL ,
-        application_id INT UNSIGNED NOT NULL ,
-        form_path VARCHAR(255) NOT NULL ,
-        PRIMARY KEY ( vid , nid ),
-        KEY qdrupal_link_nid (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      break;
-    case 'pgsql':
-      db_query("CREATE TABLE {qdrupal_application} (
-        vid int_unsigned NOT NULL DEFAULT '0',
-        nid int_unsigned NOT NULL DEFAULT '0',
-        shortname VARCHAR(50) NOT NULL,
-        PRIMARY KEY (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE TABLE {qdrupal_node} (
-        vid int_unsigned NOT NULL DEFAULT '0',
-        nid int_unsigned NOT NULL DEFAULT '0',
-        application_id int_unsigned NOT NULL DEFAULT '0',
-        type VARCHAR(20),
-        PRIMARY KEY (vid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE INDEX {qdrupal_node}_nid_idx ON {qdrupal_node} (nid)");
-      db_query("CREATE TABLE {qdrupal_setting} (
-        nid int_unsigned NOT NULL DEFAULT '0',
-        name VARCHAR(128),
-        setting TEXT,
-        PRIMARY KEY (nid)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE TABLE {qdrupal_link} (
-        vid int_unsigned NOT NULL ,
-        nid int_unsigned NOT NULL ,
-        application_id int_unsigned NOT NULL ,
-        form_path VARCHAR(255) NOT NULL ,
-        PRIMARY KEY ( vid )
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      db_query("CREATE INDEX {qdrupal_link}_nid_idx ON {qdrupal_link} (nid)");
-      break;
-  }
+	drupal_install_schema('qdrupal');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function qdrupal_uninstall() {
-    db_query('DROP TABLE {qdrupal_application}');
-    db_query('DROP TABLE {qdrupal_node}');
-    db_query('DROP TABLE {qdrupal_setting}');
-    db_query('DROP TABLE {qdrupal_link}');
+	drupal_uninstall_schema('qdrupal');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function qdrupal_schema() {
+	$schema = array();
+	$schema['qdrupal_application'] = array(
+		'description' => t('QDrupal Application Data Table.'),
+		'fields' => array(
+			'nid' => array(
+				'description' => t('The primary identifier for a node.'),
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'vid' => array(
+				'description' => t('The current {node_revisions}.vid version identifier.'),
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0),
+			'shortname' => array(
+				'description' => t('The shortname of the application.'),
+				'type' => 'varchar',
+				'length' => 50,
+				'not null' => TRUE,
+				'default' => ''),
+			),
+		'unique keys' => array(
+			'nid_vid' => array('nid', 'vid'),
+		),
+		'primary key' => array('nid')
+	);
+	$schema['qdrupal_node'] = array(
+		'description' => t('QDrupal Node Data Table.'),
+		'fields' => array(
+			'nid' => array(
+				'description' => t('The primary identifier for a node.'),
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'vid' => array(
+				'description' => t('The current {node_revisions}.vid version identifier.'),
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0),
+			'application_id' => array(
+				'description' => t('The {qdrupal_application}.nid associated with this node.'),
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0),
+			),
+		'unique keys' => array(
+			'nid_vid' => array('nid', 'vid'),
+		),
+		'primary key' => array('vid')
+	);
+	$schema['qdrupal_link'] = array(
+		'description' => t('QDrupal Link Data Table.'),
+		'fields' => array(
+			'nid' => array(
+				'description' => t('The primary identifier for a node.'),
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'vid' => array(
+				'description' => t('The current {node_revisions}.vid version identifier.'),
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0),
+			'application_id' => array(
+				'description' => t('The {qdrupal_application}.nid associated with this node.'),
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0),
+			'form_path' => array(
+				'description' => t('The path to the QForm file linked with this node.'),
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => TRUE,
+				'default' => ''),
+			),
+		'unique keys' => array(
+			'nid_vid' => array('nid', 'vid'),
+		),
+		'primary key' => array('vid')
+	);
+
+	$schema['qdrupal_setting'] = array(
+		'description' => t('QDrupal Settings Table.'),
+		'fields' => array(
+			'nid' => array(
+				'description' => t('The primary identifier for a node.'),
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'name' => array(
+				'description' => t('Setting name.'),
+				'type' => 'varchar',
+				'length' => 128,
+				'not null' => TRUE,
+				'default' => ''),
+			'setting' => array(
+				'description' => t('Setting value.'),
+				'type' => 'text'),
+			),
+		'primary key' => array('nid')
+	);
+
+	return $schema;
 }
