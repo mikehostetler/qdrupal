@@ -1,5 +1,75 @@
 <?php
 
+class QDrupalException extends Exception {
+}
+
+function _qdrupal_error_handler($__exc_errno, $__exc_errstr, $__exc_errfile, $__exc_errline, $blnExit = TRUE) {
+	if( $__exc_errno == E_NOTICE ) 
+		return;
+
+  ob_start();
+  QcodoHandleError($__exc_errno, $__exc_errstr, $__exc_errfile, $__exc_errline,$blnExit = FALSE);
+  $strContent = ob_get_clean();
+
+  throw new QDrupalException($strContent);
+}
+
+function _qdrupal_restore_drupal_error_handler() {
+  set_error_handler('drupal_error_handler');
+}
+
+function qdrupal_load_page($form_name) {
+	if(file_exists(QDRUPAL_ROOT . "/pages/$form_name.php"))
+		require_once(QDRUPAL_ROOT . "/pages/$form_name.php");
+}
+
+function qdrupal_tmpl_path($qform) {
+  // FIXME tmpl_path needs some work
+  // Update: now the function will look for either a form draft, a page, 
+  // or a drupal node.  Still needs to be better tho. ;-)
+
+  $basename = basename($qform);
+  $templatename = ereg_replace(".php", ".tpl.php", $basename);
+  // a 'page'
+  if(file_exists( dirname($qform) . DIRECTORY_SEPARATOR  . $templatename))
+    return dirname($qform) . DIRECTORY_SEPARATOR . $templatename;
+}
+
+
+function _qdrupal_run_qform($app_node,$form_name,$form_template) {
+	if(is_int($app_node))
+		$app_node = node_load($app_node);
+
+	qdrupal_prepend($app_node);
+
+	if(!class_exists($form_name)) {
+		qdrupal_load_page($form_name);
+	}
+
+	// TODO - Check that our form_template path is valid
+	if(!in_array($form_template,get_included_files())) {
+		qdrupal_tmpl_path($form_template);
+	}
+
+	try {
+		ob_start();
+		call_user_func(array($form_name,'Run'),$form_name,$form_template);
+		$content = ob_get_clean();
+	}
+	catch (QDrupalException $e) {
+		$content = $e->getMessage();
+	}
+	catch (Exception $e) {
+		ob_start();
+		QcodoHandleException($e,FALSE);
+		$content = ob_get_clean();
+	}
+
+  _qdrupal_restore_drupal_error_handler();
+
+	return $content;
+}
+
 function _qdrupal_walk_form_dir($str_path) {
   $file_list = array();
   foreach(scandir($str_path) as $file) {

@@ -187,7 +187,7 @@ function qdrupal_link_view($node, $teaser = FALSE, $page = FALSE) {
 	  $content = "View this node to see the QForm";
   }
 
-  qdrupal_restore_drupal_error_handler();
+  _qdrupal_restore_drupal_error_handler();
 
   $node = node_prepare($node, $teaser);
   $node->content['info_content'] = array(
