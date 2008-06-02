@@ -33,13 +33,6 @@ function qdrupal_node_info() {
       'title_label' => t('QDrupal Link'),
       'body_label' => t('Create an QDrupal Link'),
     ),
-		'qdrupal_doc' => array(
-      'name' => t('QDrupal Documentation Node'),
-      'module' => 'qdrupal_doc',
-      'description' => t('A QDrupal Documentation node is a node designed specifically to aid in documenting the QDrupal module.'),
-      'title_label' => t('QDrupal Documentation Subject Title'),
-      'body_label' => t('Description'),
-		),
   );
 }
  
@@ -275,7 +268,7 @@ function qdrupal_bootstrap(&$node) {
     define('DB_CONNECTION_1', serialize(array(
       'adapter' => $drupal_adapter,
       'server' => $drupal_db['host'],
-      'port' => $drupal_db['port'],
+			'port' => (isset($drupal_db['port'])?$drupal_db['port']:3306),
       'database' => substr($drupal_db['path'], 1),
       'username' => urldecode($drupal_db['user']),
       'password' => urldecode($drupal_db['pass']),
