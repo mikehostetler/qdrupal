@@ -3,6 +3,36 @@
 // $Name$
 
 /**
+ * Controller for qcodo application settings.
+ */
+function qdrupal_application_administer($node, $edit = NULL) {
+	global $qdrupal_node;
+	$qdrupal_node = $node;
+
+	qdrupal_prepend($node);
+	drupal_set_breadcrumb(array(
+			l(t('Home'),NULL),
+			l(t($node->title),'node/'.$node->nid),
+			l(t('Databases'),'node/'.$node->nid.'/databases')
+	));
+
+	if(!is_null($edit)) {
+		return _qdrupal_run_qform(
+			$node,
+			'QDrupalSettingsEdit',
+			QDRUPAL_ROOT . '/pages/qdrupal_settings_edit.php',
+			QDRUPAL_ROOT . '/templates/qdrupal_settings_edit.tpl.php');
+	}
+	else {
+		return _qdrupal_run_qform(
+			$node,
+			'QDrupalSettingsList',
+			QDRUPAL_ROOT . '/pages/qdrupal_settings_list.php',
+			QDRUPAL_ROOT . '/templates/qdrupal_settings_list.tpl.php');
+	}
+}
+
+/**
  * Form for creating new qcodo application
  */
 function qdrupal_application_form(&$node) {
@@ -209,5 +239,20 @@ function qdrupal_application_page_overview() {
   $output = '<div class="application" id="application-overview">' . $applications . '</div>';
   $output .= l('Create a new QDrupal Application','node/add/qdrupal-application');
 
+  return $output;
+}
+
+/**
+ * Theme a compact application view/summary.
+ */
+function theme_application_summary($application) {
+  $output = '<div class="' . $application->class . '">';
+  $output .= '<h2>'. l($application->title, "node/$application->nid") .'</h2>';
+  if (!empty($application->changed)) {
+    $output .= '<p><small>' . t('Last changed: !interval ago', array('!interval' => format_interval(time() - $application->changed, 2))) . '</small></p>';
+  }
+  $output .= $application->body;
+  $output .= theme('links', $application->links);
+  $output .= '</div>';
   return $output;
 }

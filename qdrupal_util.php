@@ -1,26 +1,19 @@
 <?php
 
-class QDrupalException extends Exception {
-}
-
-function _qdrupal_error_handler($__exc_errno, $__exc_errstr, $__exc_errfile, $__exc_errline, $blnExit = TRUE) {
-	if( $__exc_errno == E_NOTICE ) 
-		return;
+function _qdrupal_error_handler($errno, $errstr, $errfile, $errline, $blnExit = TRUE) {
+	//echo '<pre>';print_r(func_get_args());
 
   ob_start();
   QcodoHandleError($__exc_errno, $__exc_errstr, $__exc_errfile, $__exc_errline,$blnExit = FALSE);
-  $strContent = ob_get_clean();
+	$content = '<div style="width: 100%; overflow: auto; border: 1px solid #CDCDCD;">';
+	$content .= ob_get_clean();
+	$content .= '</div>';
 
-  throw new QDrupalException($strContent);
+	drupal_error_handler($errno, $errstr, $errfile, $errline, 1);
 }
 
 function _qdrupal_restore_drupal_error_handler() {
   set_error_handler('drupal_error_handler');
-}
-
-function qdrupal_load_page($form_name) {
-	if(file_exists(QDRUPAL_ROOT . "/pages/$form_name.php"))
-		require_once(QDRUPAL_ROOT . "/pages/$form_name.php");
 }
 
 function qdrupal_tmpl_path($qform) {
@@ -36,33 +29,32 @@ function qdrupal_tmpl_path($qform) {
 }
 
 
-function _qdrupal_run_qform($app_node,$form_name,$form_template) {
+function _qdrupal_run_qform($app_node,$form_name,$form_path,$form_template_path) {
 	if(is_int($app_node))
 		$app_node = node_load($app_node);
 
+	// Try running prepend again just to make sure
 	qdrupal_prepend($app_node);
 
-	if(!class_exists($form_name)) {
-		qdrupal_load_page($form_name);
-	}
-
-	// TODO - Check that our form_template path is valid
-	if(!in_array($form_template,get_included_files())) {
-		qdrupal_tmpl_path($form_template);
+	if(file_exists($form_path)) {
+		require_once($form_path);
 	}
 
 	try {
+		if(!class_exists($form_name)) {
+			throw new Exception("Class $form_name does not exist!");
+		}
+
 		ob_start();
-		call_user_func(array($form_name,'Run'),$form_name,$form_template);
+		call_user_func(array($form_name,'Run'),$form_name,$form_template_path);
 		$content = ob_get_clean();
-	}
-	catch (QDrupalException $e) {
-		$content = $e->getMessage();
 	}
 	catch (Exception $e) {
 		ob_start();
 		QcodoHandleException($e,FALSE);
-		$content = ob_get_clean();
+		$content = '<div style="width: 100%; overflow: auto; border: 1px solid #CDCDCD;">';
+		$content .= ob_get_clean();
+		$content .= '</div>';
 	}
 
   _qdrupal_restore_drupal_error_handler();

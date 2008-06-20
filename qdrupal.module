@@ -1,6 +1,8 @@
 <?php
 // $Id$
 
+require_once("qdrupal_bootstrap.php");
+require_once("qdrupal_codegen.php");
 require_once("qdrupal_application.php");
 require_once("qdrupal_node.php");
 require_once("qdrupal_link.php");
@@ -120,29 +122,6 @@ function qdrupal_menu() {
   return $items;
 }
 
-/*
-function qdrupal_menu_alter(&$callbacks) {
-	//echo '<pre>'; print_r($callbacks['node/add/qdrupal-application']);
-	//echo '<pre>'; print_r($callbacks);
-	$callbacks['node/add/qdrupal-application']['page callback'] = 'qdrupal_application_qform_add';
-	$callbacks['node/%node/edit']['page callback'] = 'qdrupal_application_qform_edit';
-	//print_r($callbacks['node/add/qdrupal-application']); echo '</pre>';
-}
-
-function qdrupal_application_qform_add($type) {
-	return 'QDrupal Application Form';
-}
-
-function qdrupal_application_qform_edit($node) {
-	if($node->type == 'qdrupal_application') {
-		return 'QDrupal Application Form';
-	}
-	else {
-		return node_page_edit($node);
-	}
-}
- */
-
 /**
  * Helper function for hook_menu to validate a Qdrupal application node 
  */
@@ -169,232 +148,6 @@ function qdrupal_theme() {
 }
 
 /**
- * Bootstrap qcodo into drupal
- */
-function qdrupal_bootstrap(&$node) {
-  /**
-   * Set up tons of paths
-   */
-
-  // TODO - Handle if download method is set to private
-  $qdrupal_path = file_create_path('qdrupal');
-  file_check_directory($qdrupal_path, FILE_CREATE_DIRECTORY);
-
-  define('DS', DIRECTORY_SEPARATOR);
-  define('PS', PATH_SEPARATOR);
-
-  define ('__DOCROOT__', getenv('DOCUMENT_ROOT'));
-  define ('__VIRTUAL_DIRECTORY__', '');
-  define('QDRUPAL_ROOT',dirname(__FILE__));
-
-  // Detect whether we're running zcodo or qcodo
-  if(file_exists(QDRUPAL_ROOT . DS . 'qcodo')) {
-    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'qcodo');
-    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'qcodo'.DS.'wwwroot');
-  }
-  elseif(file_exists(QDRUPAL_ROOT . DS . 'zcodo')) {
-    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'zcodo');
-    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'zcodo'.DS.'wwwroot');
-  }
-  else {
-    // Keep old path for reference.
-    if (!isset($_REQUEST['destination'])) {
-      $_REQUEST['destination'] = $_GET['q'];
-    }
-
-    $path = drupal_get_normal_path('<front>');
-    if ($path && $path != $_GET['q']) {
-      // Set the active item in case there are tabs to display or other dependencies on the path.
-      menu_set_active_item($path);
-      $return = menu_execute_active_handler($path);
-    }
-
-    if (empty($return) || $return == MENU_NOT_FOUND || $return == MENU_ACCESS_DENIED) {
-      drupal_set_title(t('QDrupal Fatal Error'));
-      $return = t('The <a href="http://zcodo.com">Zcodo</a> or <a
-        href="http://qcodo.com">Qcodo</a> libraries are not installed!
-        Please read the INSTALLATION instructions for the QDrupal module
-        and install the correct libraries.');
-    }
-    print theme('page',$return);
-  }
-
-  define('APPLICATION_NAME', $node->shortname);
-  define('DRUPAL_ROOT',__DOCROOT__ . base_path());
-
-  define('QDRUPAL_WRITABLE_PATH',DRUPAL_ROOT.$qdrupal_path);
-
-  define('QCODO_DEFAULT_CODEGEN',QCODO_DIST . DS . 'wwwroot' . DS . '_devtools' . DS . 'codegen_settings.xml');
-  define('QCODO_DEFAULT_CONFIGURATION',QCODO_DIST . DS . 'wwwroot' .  DS . 'includes' . DS . 'configuration_pro.inc.php');
-
-  // load database settings
-  $settings = qdrupal_settings_load($node->nid);
-  $count = 1;
-  if ($settings) {
-    foreach ($settings as $s) {
-      $connection_array = array(
-        'adapter' => $s->setting['adapter'],
-        'server' => $s->setting['server'],
-        'port' => $s->setting['port'],
-        'database' => $s->setting['dbname'],
-        'username' => $s->setting['username'],
-        'password' => $s->setting['password'],
-        'profiling' => $s->setting['profiling']
-      );
-      define("DB_CONNECTION_$count", serialize($connection_array) );
-      $count++;
-    }
-  } else {
-    global $db_url;
-    if (is_array($db_url)) {
-      $connect_url = $db_url['default'];
-    }
-    else {
-      $connect_url = $db_url;
-    }
-    $drupal_db = parse_url($connect_url);
-    $db_type = substr($connect_url, 0, strpos($connect_url, '://'));
-    switch($db_type) {
-      case 'pgsql':
-        $drupal_adapter = 'PostgreSql';
-        break;
-      case 'mysqli':
-        $drupal_adapter = 'MySqli5';
-        break;
-      default:
-        $drupal_adapter = 'MySql';
-        break;
-    }
-    define('DB_CONNECTION_1', serialize(array(
-      'adapter' => $drupal_adapter,
-      'server' => $drupal_db['host'],
-			'port' => (isset($drupal_db['port'])?$drupal_db['port']:3306),
-      'database' => substr($drupal_db['path'], 1),
-      'username' => urldecode($drupal_db['user']),
-      'password' => urldecode($drupal_db['pass']),
-      'profiling' => FALSE)));
-  }
-  
-  define ('ALLOW_REMOTE_ADMIN', user_access('administer qdrupal applications'));
-  define ('__URL_REWRITE__', 'apache'); // TODO - Make a setting for this
-  define ('__DEVTOOLS_CLI__', __DOCROOT__ . __SUBDIRECTORY__ . DS . '..' . DS . '_devtools_cli');
-  define ('__INCLUDES__', __DOCROOT__ .  __SUBDIRECTORY__ . DS . 'includes');
-  define ('__QCODO__', __INCLUDES__ . DS . 'qcodo');
-  define ('__QCODO_CORE__', __INCLUDES__ . DS . 'qcodo' . DS . '_core');
-  define ('__DATA_CLASSES__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'data_classes');
-  define ('__DATAGEN_CLASSES__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'data_classes' . DS . 'generated');
-  define ('__DATA_META_CONTROLS__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'data_meta_controls');
-  define ('__DATAGEN_META_CONTROLS__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'data_meta_controls'. DS . 'generated');
-  define ('__QDRUPAL_PAGES__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'pages');
-  define ('__QDRUPAL_NODES__', QDRUPAL_WRITABLE_PATH . DS . APPLICATION_NAME . DS . 'nodes');
-  define ('__DEVTOOLS__', __SUBDIRECTORY__ . DS . '_devtools');
-  define ('__FORM_DRAFTS__', base_path() . $qdrupal_path . DS . APPLICATION_NAME . DS . 'drafts');
-  define ('__PANEL_DRAFTS__', base_path() . $qdrupal_path . DS . APPLICATION_NAME . DS . 'drafts' . DS . 'dashboard');
-
-  // We don't want "Examples"
-  define ('__EXAMPLES__', null);
-
-  define ('__JS_ASSETS__', __SUBDIRECTORY__ . DS . 'assets' . DS . 'js');
-  define ('__CSS_ASSETS__', __SUBDIRECTORY__ . DS . 'assets' . DS . 'css');
-  define ('__IMAGE_ASSETS__', __SUBDIRECTORY__ . DS . 'assets' . DS . 'images');
-  define ('__PHP_ASSETS__', __SUBDIRECTORY__ . DS . 'assets' . DS . 'php');
-
-  // TODO - Integrate Drupal's Location into this
-  if ((function_exists('date_default_timezone_set')) && (!ini_get('date.timezone')))
-    date_default_timezone_set('America/Denver');
-
-  define('ERROR_PAGE_PATH', __PHP_ASSETS__ . DS . '_core' . DS . 'error_page.php');
-  define('ERROR_LOG_PATH', QDRUPAL_WRITABLE_PATH . DS . 'error_log');
-   
-  //drupal_add_css() puts a / at the beginning, so need to strip it off
-  drupal_add_css(substr(__CSS_ASSETS__ . DS . "styles.css", 1));
-}
-
-/**
-  * Run the QDrupal prepend.inc.php file
-  */
-function qdrupal_prepend(&$node) {
-  if (!defined('__PREPEND_INCLUDED__')) {
-    define('__PREPEND_INCLUDED__', 1);
-    qdrupal_bootstrap($node);
-    require(__QCODO_CORE__ . DS . 'qcodo.inc.php');
-
-    abstract class QApplication extends QApplicationBase {
-      public static function Autoload($strClassName) {
-        if (!parent::Autoload($strClassName)) {
-          // TODO: Run any custom autoloading functionality (if any) here...
-        }
-      }
-    }
-
-    if (array_key_exists('SERVER_PROTOCOL', $_SERVER)) {
-      set_error_handler('_qdrupal_error_handler');
-      set_exception_handler('QcodoHandleException');
-    }
-
-    QApplication::Initialize();
-    QApplication::$RequestUri = request_uri();
-    QApplication::InitializeDatabaseConnections();
-
-    if (isset($_SESSION)) {
-      if (array_key_exists('country_code', $_SESSION))
-        QApplication::$CountryCode = $_SESSION['country_code'];
-      if (array_key_exists('language_code', $_SESSION))
-        QApplication::$LanguageCode = $_SESSION['language_code'];
-    }
-
-    if (QApplication::$LanguageCode)
-      QI18n::Initialize();
-    else {
-      QApplication::$CountryCode = 'us';  // Not sure where we can pull this value from yet
-      QApplication::$LanguageCode = $language->language;
-      QI18n::Initialize();
-    }
-  }
-}
-
-/**
- * Controller for qcodo application settings.
- */
-
-function qdrupal_application_administer($node, $edit = NULL) {
-	global $qdrupal_node;
-	$qdrupal_node = $node;
-
-	drupal_set_breadcrumb(array(
-			l(t('Home'),NULL),
-			l(t($node->title),'node/'.$node->nid),
-			l(t('Databases'),'node/'.$node->nid.'/databases')
-	));
-
-	if(!is_null($edit)) {
-		qdrupal_prepend($node);
-		require_once(QDRUPAL_ROOT . '/pages/qdrupal_settings_edit.php');
-		return _qdrupal_run_qform($node,'QDrupalSettingsEdit',QDRUPAL_ROOT . '/templates/qdrupal_settings_edit.tpl.php');
-	}
-	else {
-		qdrupal_prepend($node);
-		require_once(QDRUPAL_ROOT . '/pages/qdrupal_settings_list.php');
-		return _qdrupal_run_qform($node,'QDrupalSettingsList',QDRUPAL_ROOT . '/templates/qdrupal_settings_list.tpl.php');
-	}
-}
-
-/**
- * Theme a compact application view/summary.
- */
-function theme_application_summary($application) {
-  $output = '<div class="' . $application->class . '">';
-  $output .= '<h2>'. l($application->title, "node/$application->nid") .'</h2>';
-  if (!empty($application->changed)) {
-    $output .= '<p><small>' . t('Last changed: !interval ago', array('!interval' => format_interval(time() - $application->changed, 2))) . '</small></p>';
-  }
-  $output .= $application->body;
-  $output .= theme('links', $application->links);
-  $output .= '</div>';
-  return $output;
-}
-
-/**
  * List all qdrupal nodes for a given application node
  */
 function qdrupal_get_nodes($nid) {
@@ -413,8 +166,8 @@ function qdrupal_get_nodes($nid) {
     $output .= t('<p><a href="!create-qdrupal-node">Create new QDrupal node</a></p>', array('!create-qdrupal-node' => url("node/add/qdrupal-node/$node->shortname")));
   }
   else {
-  // fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
-  $output .= t('No QDrupal nodes found. Click here to <a href="!create-qdrupal-nodes">create a new qdrupal node for this application</a>.', array('!create-qdrupal-nodes' => url("node/add/qdrupal-node/$node->shortname")));
+		// fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
+		$output .= t('No QDrupal nodes found. Click here to <a href="!create-qdrupal-nodes">create a new qdrupal node for this application</a>.', array('!create-qdrupal-nodes' => url("node/add/qdrupal-node/$node->shortname")));
   }
   return $output;
 }
@@ -439,8 +192,8 @@ function qdrupal_get_links($nid) {
     $output .= t('<p><a href="!create-qdrupal-link">Create new QDrupal link</a></p>', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$node->shortname")));
   }
   else {
-  // fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
-  $output .= t('No QDrupal links found. Click here to <a href="!create-qdrupal-link">create a new qdrupal link for this application</a>.', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$node->shortname")));
+		// fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
+		$output .= t('No QDrupal links found. Click here to <a href="!create-qdrupal-link">create a new qdrupal link for this application</a>.', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$node->shortname")));
   }
   return $output;
 }
@@ -529,123 +282,12 @@ function qdrupal_front() {
 }
 
 /**
- * Function that runs the Qcodo Code Generator
- */ 
-function qdrupal_application_codegen($node) {
-	global $qdrupal_node;
-	$qdrupal_node = $node;
-
-  drupal_set_title($node->title ." :: Codegen");
-	drupal_set_breadcrumb(array(
-			l(t('Home'),NULL),
-			l(t($node->title),'node/'.$node->nid),
-			l(t('Codegen'),'node/'.$node->nid.'/codegen')
-		));
-
-	qdrupal_prepend($node);
-	require_once(QDRUPAL_ROOT . '/pages/qdrupal_codegen.php');
-	return _qdrupal_run_qform($node,'QDrupalCodegen',QDRUPAL_ROOT . '/templates/qdrupal_codegen.tpl.php');
-}
-
-function qdrupal_run_codegen() {
-	global $qdrupal_node;
-	$node = $qdrupal_node;
-
-  $strXML = <<<XML
-<?xml version="1.0" encoding="UTF-8" ?>
-<codegen>
-  <name application="{$node->title}"/>
-  <templateEscape begin="&lt;%" end="%&gt;"/>
-  <dataSources>
-  </dataSources>
-</codegen>
-XML;
-
-  $objXML = simplexml_load_string($strXML);
-
-  // get codegen settings from database
-  // put settings xml variable
-  $settings = qdrupal_settings_load($node->nid);
-  $count = 1;
-  if ($settings) {
-    foreach ($settings as $s) {
-			$database = $objXML->dataSources->addChild('database');
-			$database->addAttribute('index', $count);
-
-			$className = $database->addChild('className');
-			$className->addAttribute('prefix', $s->setting['classNamePrefix']);
-			$className->addAttribute('suffix', $s->setting['classNameSuffix']);
-
-			$associatedObjectName = $database->addChild('associatedObjectName');
-			$associatedObjectName->addAttribute('prefix', $s->setting['associatedObjectNamePrefix'] ? $s->setting['associatedObjectNamePrefix'] : '');
-			$associatedObjectName->addAttribute('suffix', $s->setting['associatedObjectNameSuffix'] ? $s->setting['associatedObjectNameSuffix'] : '');
-
-			$typeTableIdentifier = $database->addChild('typeTableIdentifier');
-			$typeTableIdentifier ->addAttribute('suffix', $s->setting['typeTableIdentifierSuffix'] ? $s->setting['typeTableIdentifierSuffix'] : '');
-
-			$associationTableIdentifier = $database->addChild('associationTableIdentifier');
-			$associationTableIdentifier ->addAttribute('suffix', $s->setting['associationTableIdentifierSuffix'] ? $s->setting['associationTableIdentifierSuffix'] : '');
-
-      $excludeTables = $database->addChild('excludeTables');
-      $excludeTables->addAttribute('list', $s->setting['excludeTablesList'] );
-      $excludeTables->addAttribute('pattern', $s->setting['excludeTablesPattern'] );
-
-      $includeTables = $database->addChild('includeTables');
-      $includeTables->addAttribute('list', $s->setting['includeTablesList'] );
-      $includeTables->addAttribute('pattern', $s->setting['includeTablesPattern'] );
-      $count++;
-    }
-  }
-
-  $strFilename = '/codegen_settings.xml';
-  $strAppPath = file_create_path('qdrupal' . DIRECTORY_SEPARATOR .  preg_replace('/\s+/', '',strip_tags($node->shortname)));
-  file_check_directory($strAppPath, FILE_CREATE_DIRECTORY);
-
-  // Output xml to filesystem
-  $strXML = $objXML->asXML();
-  file_save_data($strXML,$strAppPath.$strFilename,FILE_EXISTS_REPLACE);
-
-  qdrupal_prepend($node);
-  ob_start();
-  require(__QCODO__ . DIRECTORY_SEPARATOR . 'codegen' . DIRECTORY_SEPARATOR . 'QCodeGen.class.php');
-  QCodeGen::Run($strAppPath.$strFilename);
-  ?>
-  <div class="page">
-    <?php if ($strErrors = QCodeGen::$RootErrors) { ?>
-      <p><b>The following root errors were reported:</b></p>
-      <div class="code"><xmp><?php echo ($strErrors); ?></xmp></div>
-      <p></p>
-    <?php } else { ?>
-      <p><b>CodeGen Settings:</b></p>
-      <div class="code"><xmp><?php echo (QCodeGen::GetSettingsXml()); ?></xmp></div>
-      <p></p>
-    <?php } ?>
-
-    <?php foreach (QCodeGen::$CodeGenArray as $objCodeGen) { ?>
-      <p><b><?php _p($objCodeGen->GetTitle()); ?></b></p>
-      <div class="code"><span class="code_title"><?php _p($objCodeGen->GetReportLabel()); ?></span><br/><br/>
-        <xmp><?php echo ($objCodeGen->GenerateAll()); ?></xmp>
-        <?php if ($strErrors = $objCodeGen->Errors) { ?>
-          <p class="code_title">The following errors were reported:</p>
-          <xmp><?php echo ($objCodeGen->Errors); ?></xmp>
-        <?php } ?>
-      </div><p></p>
-    <?php } ?>
-    
-    <?php foreach (QCodeGen::GenerateAggregate() as $strMessage) { ?>
-      <p><b><?php _p($strMessage); ?></b></p>
-    <?php } ?>
-  </div>
-  <?php
-  _qdrupal_restore_drupal_error_handler();
-  return ob_get_clean();
-}
-
-/**
  * Function that runs a QDrupal Draft
  */ 
 function qdrupal_application_drafts($node) {
   $args = func_get_args();
+	array_shift($args); // Pull the node off the top
+	
   foreach($args as $k => $item) {
     if(preg_match('/[^\/,-_;a-z0-9*]/i', $args[$k])) {
       unset($args[$k]);
