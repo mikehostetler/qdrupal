@@ -17,9 +17,9 @@ function qdrupal_node_info() {
     'qdrupal_application' => array(
       'name' => t('QDrupal Application'),
       'module' => 'qdrupal_application',
-      'description' => t("A QDrupal application is a collection of qcodo pages with common settings.  Each application has its own database and codegen settings"),
-      'title_label' => t('QDrupal App'),
-      'body_label' => t('Create an application'),
+      'description' => t("A QDrupal application is a collection of Qcodo forms with common settings.  Each application has its own database and codegen settings."),
+      'title_label' => t('QDrupal Application Name'),
+      'body_label' => t('Create an Application'),
     ),
     'qdrupal_node' => array(
       'name' => t('QDrupal Node'),
@@ -298,10 +298,14 @@ function qdrupal_application_drafts($node) {
   }
 
   // if there are no additional arguments, display form draft index
-  if(sizeof($args) == 1) {
+  if(sizeof($args) == 0) {
     qdrupal_prepend($node);
-    drupal_set_title($node->title . " :: Drafts");
-    // todo add breadcrumbs here
+    drupal_set_title($node->title . " Drafts");
+		drupal_set_breadcrumb(array(
+				l(t('Home'),NULL),
+				l(t($node->title),'node/'.$node->nid),
+				l(t('Drafts'),'node/'.$node->nid.'/drafts')
+		));
 
     // Iterate through the files in this "form_drafts" folder, looking for files that end in _edit.php or _list.php
     $draft_suffixes = array('_edit.php', '_list.php', '_combo.php');
@@ -343,19 +347,23 @@ OUT;
     print $out;
   } else {
     qdrupal_prepend($node);
+    drupal_set_title(ucfirst($args[0]) . " " . ucfirst($args[1]) . " Draft");
+		drupal_set_breadcrumb(array(
+				l(t('Home'),NULL),
+				l(t($node->title),'node/'.$node->nid),
+				l(t('Drafts'),'node/'.$node->nid.'/drafts'),
+				l(ucfirst($args[0]),'node/'.$node->nid.'/drafts/'.$args[0].'/'.$args[1]),
+				l(ucfirst($args[1]),'node/'.$node->nid.'/drafts/'.$args[0].'/'.$args[1])
+		));
 
-    $drafts = __DOCROOT__ . __FORM_DRAFTS__ . DIRECTORY_SEPARATOR;
-    //$pageStr = DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR,$args[1]);
-    $page = $args[1] . '_' . $args[2] . '.php';
+    $drafts = QDRUPAL_APPLICATION_PATH . DS . basename(__FORM_DRAFTS__) . DS;
+    $page = $drafts . $args[0] . '_' . $args[1] . '.php';
 
-    if(file_exists($drafts . $page)) {
-      $page = $drafts . $page;
-    } else {
+    if(!file_exists($page)) {
       drupal_not_found($page);
-      return $drafts . $page . print_r($args);
+      return $page . print_r($args);
     }
-    // todo add breadcrumbs here
-    drupal_set_title("$node->title -- Draft");
+
     require_once($page);
   }
   

@@ -5,15 +5,11 @@
  * Load all qcodo settings for a given application node. Just load one settings array if $name is passed in.
  */
 function qdrupal_settings_load($nid,$name = '') {
-  static $settings = array();
-
-  if (!$settings) {
-    $result = db_query('SELECT * FROM {qdrupal_setting} where nid = %d',$nid);
-    while ($data = db_fetch_object($result)) {
-      $data->setting = unserialize($data->setting);
-      $settings[$data->name] = $data;
-    }
-  }
+	$result = db_query('SELECT * FROM {qdrupal_setting} where nid = %d',$nid);
+	while ($data = db_fetch_object($result)) {
+		$data->setting = unserialize($data->setting);
+		$settings[$data->name] = $data;
+	}
   return ($name ? $settings[$name] : $settings);
 }
 

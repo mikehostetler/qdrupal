@@ -5,7 +5,7 @@
  * Function that runs the Qcodo Code Generator
  */ 
 function qdrupal_application_codegen($node) {
-  drupal_set_title($node->title ." :: Codegen");
+  drupal_set_title($node->title ." Codegen");
 	drupal_set_breadcrumb(array(
 			l(t('Home'),NULL),
 			l(t($node->title),'node/'.$node->nid),
@@ -70,17 +70,15 @@ XML;
     }
   }
 
-  $strFilename = '/codegen_settings.xml';
-  $strAppPath = file_create_path('qdrupal' . DIRECTORY_SEPARATOR .  preg_replace('/\s+/', '',strip_tags($node->shortname)));
-  file_check_directory($strAppPath, FILE_CREATE_DIRECTORY);
+	qdrupal_prepend($node);
+  $codegen_file = QDRUPAL_APPLICATION_PATH . DS . 'codegen_settings.xml';
 
   // Output xml to filesystem
   $strXML = $objXML->asXML();
-  file_save_data($strXML,$strAppPath.$strFilename,FILE_EXISTS_REPLACE);
+  file_save_data($strXML,$codegen_file,FILE_EXISTS_REPLACE);
 
-	qdrupal_prepend($node);
 	require(__QCODO__ . DIRECTORY_SEPARATOR . 'codegen' . DIRECTORY_SEPARATOR . 'QCodeGen.class.php');
-	QCodeGen::Run($strAppPath.$strFilename);
+	QCodeGen::Run($codegen_file);
 	?>
 	<div class="page">
     <?php if ($strErrors = QCodeGen::$RootErrors) { ?>

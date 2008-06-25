@@ -12,12 +12,11 @@ function qdrupal_bootstrap(&$node) {
 
 	define('__BOOTSTRAP_INCLUDED__', 1);
 
-  // TODO - Handle if download method is set to private
-  $qdrupal_path = file_create_path('qdrupal');
-  file_check_directory($qdrupal_path, FILE_CREATE_DIRECTORY);
-
-	if($node->shortname == 'pwsquared') {
-		$qdrupal_path = drupal_get_path('module','pwsquared');
+	if($node->is_module == 1) {
+		$qdrupal_path = drupal_get_path('module',$node->shortname);
+	}
+	else {
+		$qdrupal_path = _qdrupal_application_path($node);
 	}
 
 	//ob_clean(); echo '<pre>'; var_dump($qdrupal_path); print_r($node); exit;
@@ -31,7 +30,7 @@ function qdrupal_bootstrap(&$node) {
 
 	_qdrupal_check_zcodo_installed();
 
-	if($node->shortname == 'pwsquared') {
+	if($node->is_module == 1) {
 		define('APPLICATION_NAME', '');
 	}
 	else {
@@ -40,7 +39,7 @@ function qdrupal_bootstrap(&$node) {
 
   define('DRUPAL_ROOT', __DOCROOT__ . base_path());
 
-  define('QDRUPAL_WRITABLE_PATH', DRUPAL_ROOT . $qdrupal_path);
+  define('QDRUPAL_APPLICATION_PATH', DRUPAL_ROOT . $qdrupal_path);
 
   define('QCODO_DEFAULT_CODEGEN', QCODO_DIST . DS . 'wwwroot' . DS . '_devtools' . DS . 'codegen_settings.xml');
   define('QCODO_DEFAULT_CONFIGURATION', QCODO_DIST . DS . 'wwwroot' .  DS . 'includes' . DS . 'configuration_pro.inc.php');
@@ -48,20 +47,20 @@ function qdrupal_bootstrap(&$node) {
 	_qdrupal_define_application_databases($node->nid);
   
   define ('ALLOW_REMOTE_ADMIN', user_access('administer qdrupal applications'));
-  define ('__URL_REWRITE__', 'apache'); // TODO - Make a setting for this
+  define ('__URL_REWRITE__', 'apache'); 
   define ('__DEVTOOLS_CLI__', __DOCROOT__ . __SUBDIRECTORY__ . DS . '..' . DS . '_devtools_cli');
   define ('__INCLUDES__', __DOCROOT__ .  __SUBDIRECTORY__ . DS . 'includes');
   define ('__QCODO__', __INCLUDES__ . DS . 'qcodo');
   define ('__QCODO_CORE__', __INCLUDES__ . DS . 'qcodo' . DS . '_core');
-  define ('__DATA_CLASSES__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'data_classes');
-  define ('__DATAGEN_CLASSES__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'data_classes' . DS . 'generated');
-  define ('__DATA_META_CONTROLS__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'data_meta_controls');
-  define ('__DATAGEN_META_CONTROLS__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'data_meta_controls'. DS . 'generated');
-  define ('__QDRUPAL_PAGES__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'pages');
-  define ('__QDRUPAL_NODES__', QDRUPAL_WRITABLE_PATH . APPLICATION_NAME . DS . 'nodes');
+  define ('__DATA_CLASSES__', QDRUPAL_APPLICATION_PATH . DS . 'data_classes');
+  define ('__DATAGEN_CLASSES__', QDRUPAL_APPLICATION_PATH . DS . 'data_classes' . DS . 'generated');
+  define ('__DATA_META_CONTROLS__', QDRUPAL_APPLICATION_PATH . DS . 'data_meta_controls');
+  define ('__DATAGEN_META_CONTROLS__', QDRUPAL_APPLICATION_PATH . DS . 'data_meta_controls'. DS . 'generated');
+  define ('__QDRUPAL_PAGES__', QDRUPAL_APPLICATION_PATH . DS . 'pages');
+  define ('__QDRUPAL_NODES__', QDRUPAL_APPLICATION_PATH . DS . 'nodes');
   define ('__DEVTOOLS__', __SUBDIRECTORY__ . DS . '_devtools');
-  define ('__FORM_DRAFTS__', base_path() . $qdrupal_path . APPLICATION_NAME . DS . 'drafts');
-  define ('__PANEL_DRAFTS__', base_path() . $qdrupal_path . APPLICATION_NAME . DS . 'drafts' . DS . 'dashboard');
+  define ('__FORM_DRAFTS__', base_path() . $qdrupal_path . DS . 'drafts');
+  define ('__PANEL_DRAFTS__', base_path() . $qdrupal_path . DS . 'drafts' . DS . 'dashboard');
 
   // We don't want "Examples"
   define ('__EXAMPLES__', null);
@@ -83,8 +82,7 @@ function qdrupal_bootstrap(&$node) {
     date_default_timezone_set('America/Denver');
 
   define('ERROR_PAGE_PATH', __PHP_ASSETS__ . DS . '_core' . DS . 'error_page.php');
-	// Todo - We will need to modify this when using a module-based qdrupal app
-  define('ERROR_LOG_PATH', QDRUPAL_WRITABLE_PATH . DS . 'error_log');
+  define('ERROR_LOG_PATH', QDRUPAL_APPLICATION_PATH . DS . 'error_log');
    
   //drupal_add_css() puts a / at the beginning, so need to strip it off
   drupal_add_css(substr(__CSS_ASSETS__ . DS . "styles.css", 1));
@@ -99,14 +97,18 @@ function qdrupal_prepend(&$node) {
 	}
 
 	define('__PREPEND_INCLUDED__', 1);
+
 	qdrupal_bootstrap($node);
 	require(__QCODO_CORE__ . DS . 'qcodo.inc.php');
 
-	// TODO - Abstract this out to potential application specific code
-	abstract class QApplication extends QApplicationBase {
-		public static function Autoload($strClassName) {
-			if (!parent::Autoload($strClassName)) {
-				// TODO: Run any custom autoloading functionality (if any) here...
+	if(file_exists(QDRUPAL_APPLICATION_PATH . DS . 'application.class.php')) {
+		require_once(QDRUPAL_APPLICATION_PATH . DS . 'application.class.php');
+	}
+	else {
+		abstract class QApplication extends QApplicationBase {
+			public static function Autoload($strClassName) {
+				if (!parent::Autoload($strClassName)) {
+				}
 			}
 		}
 	}

@@ -1,0 +1,6 @@
+; $Id$
+name = Node Edit Helper package
+description = Provides a clean mechanism to override a nodes edit page
+core = 6.x
+package = QDrupal
+version = 6.x-1.0

@@ -39,6 +39,12 @@ function qdrupal_schema() {
 				'length' => 50,
 				'not null' => TRUE,
 				'default' => ''),
+			'is_module' => array(
+				'type' => 'int', 
+				'unsigned' => TRUE, 
+				'size' => 'tiny', 
+				'not null' => TRUE, 
+				'disp-width' => '1'),
 			),
 		'unique keys' => array(
 			'nid_vid' => array('nid', 'vid'),
@@ -122,7 +128,7 @@ function qdrupal_schema() {
 				'description' => t('Setting value.'),
 				'type' => 'text'),
 			),
-		'primary key' => array('nid')
+		'primary key' => array('nid','name')
 	);
 
 	return $schema;

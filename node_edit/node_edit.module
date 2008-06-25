@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implementation of hook_menu_alter()
+ */
+function node_edit_menu_alter(&$callbacks) {
+	$callbacks['node/%node/edit']['page callback'] = 'node_edit_menu_callback';
+
+	// Call all the node edit hooks and determine our callbacks
+	$edit_info = module_invoke_all('node_edit');
+	variable_set('node_edit_info',$edit_info);
+};
+
+
+function node_edit_menu_callback($node) {
+	$edit_info = variable_get('node_edit_info',array());
+
+	// Execute the callbacks for node/%node/edit
+	if(array_key_exists($node->type,$edit_info)) {
+		$callback = $edit_info[$node->type];
+		$function = $callback['callback'];
+		if(function_exists($function)) {
+			return call_user_func_array($function,array($node));
+		}
+	}
+	
+	// Default to the node page edit function
+	return node_page_edit($node);
+}
