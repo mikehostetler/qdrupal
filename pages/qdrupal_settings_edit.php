@@ -49,7 +49,7 @@
 			$this->txtProfile->Text = $this->objSetting['name'];
 			$this->txtProfile->Required = TRUE;
 
-			$objAdapters = array('MySql','MySqli','MySqli5','PgSql');
+			$objAdapters = array('MySql','MySqli','MySqli5','PostgreSql');
 			$this->lstAdapter = new QListBox($this);
 			$this->lstAdapter->Required = TRUE;
 			$this->lstAdapter->Name = "Adapter";
