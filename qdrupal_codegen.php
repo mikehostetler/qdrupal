@@ -5,6 +5,8 @@
  * Function that runs the Qcodo Code Generator
  */ 
 function qdrupal_application_codegen($node) {
+	global $qdrupal_node;
+	$qdrupal_node = $node;
   drupal_set_title($node->title ." Codegen");
 	drupal_set_breadcrumb(array(
 			l(t('Home'),NULL),
@@ -75,7 +77,7 @@ XML;
 
   // Output xml to filesystem
   $strXML = $objXML->asXML();
-  file_save_data($strXML,$codegen_file,FILE_EXISTS_REPLACE);
+  file_put_contents($codegen_file,$strXML);
 
 	require(__QCODO__ . DIRECTORY_SEPARATOR . 'codegen' . DIRECTORY_SEPARATOR . 'QCodeGen.class.php');
 	QCodeGen::Run($codegen_file);
