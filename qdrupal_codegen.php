@@ -7,7 +7,7 @@
 function qdrupal_application_codegen($node) {
 	global $qdrupal_node;
 	$qdrupal_node = $node;
-  drupal_set_title($node->title ." Codegen");
+	drupal_set_title($node->title ." Codegen");
 	drupal_set_breadcrumb(array(
 			l(t('Home'),NULL),
 			l(t($node->title),'node/'.$node->nid),
@@ -44,22 +44,22 @@ XML;
   $count = 1;
   if ($settings) {
     foreach ($settings as $s) {
-			$database = $objXML->dataSources->addChild('database');
-			$database->addAttribute('index', $count);
+      $database = $objXML->dataSources->addChild('database');
+      $database->addAttribute('index', $count);
 
-			$className = $database->addChild('className');
-			$className->addAttribute('prefix', $s->setting['classNamePrefix']);
-			$className->addAttribute('suffix', $s->setting['classNameSuffix']);
+      $className = $database->addChild('className');
+      $className->addAttribute('prefix', $s->setting['classNamePrefix']);
+      $className->addAttribute('suffix', $s->setting['classNameSuffix']);
 
-			$associatedObjectName = $database->addChild('associatedObjectName');
-			$associatedObjectName->addAttribute('prefix', $s->setting['associatedObjectNamePrefix'] ? $s->setting['associatedObjectNamePrefix'] : '');
-			$associatedObjectName->addAttribute('suffix', $s->setting['associatedObjectNameSuffix'] ? $s->setting['associatedObjectNameSuffix'] : '');
+      $associatedObjectName = $database->addChild('associatedObjectName');
+      $associatedObjectName->addAttribute('prefix', $s->setting['associatedObjectNamePrefix'] ? $s->setting['associatedObjectNamePrefix'] : '');
+      $associatedObjectName->addAttribute('suffix', $s->setting['associatedObjectNameSuffix'] ? $s->setting['associatedObjectNameSuffix'] : '');
 
-			$typeTableIdentifier = $database->addChild('typeTableIdentifier');
-			$typeTableIdentifier ->addAttribute('suffix', $s->setting['typeTableIdentifierSuffix'] ? $s->setting['typeTableIdentifierSuffix'] : '');
+      $typeTableIdentifier = $database->addChild('typeTableIdentifier');
+      $typeTableIdentifier ->addAttribute('suffix', $s->setting['typeTableIdentifierSuffix'] ? $s->setting['typeTableIdentifierSuffix'] : '');
 
-			$associationTableIdentifier = $database->addChild('associationTableIdentifier');
-			$associationTableIdentifier ->addAttribute('suffix', $s->setting['associationTableIdentifierSuffix'] ? $s->setting['associationTableIdentifierSuffix'] : '');
+      $associationTableIdentifier = $database->addChild('associationTableIdentifier');
+      $associationTableIdentifier ->addAttribute('suffix', $s->setting['associationTableIdentifierSuffix'] ? $s->setting['associationTableIdentifierSuffix'] : '');
 
       $excludeTables = $database->addChild('excludeTables');
       $excludeTables->addAttribute('list', $s->setting['excludeTablesList'] );
@@ -68,6 +68,10 @@ XML;
       $includeTables = $database->addChild('includeTables');
       $includeTables->addAttribute('list', $s->setting['includeTablesList'] );
       $includeTables->addAttribute('pattern', $s->setting['includeTablesPattern'] );
+
+      $relationships = $database->addChild('relationshipsScript');
+      $relationships->addAttribute('filepath',$s->setting['relationships']);
+      $relationships->addAttribute('format','qcodo');
       $count++;
     }
   }
