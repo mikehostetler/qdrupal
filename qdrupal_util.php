@@ -29,12 +29,12 @@ function qdrupal_tmpl_path($qform) {
 }
 
 
-function _qdrupal_run_qform($app_node,$form_name,$form_path,$form_template_path) {
-	if(is_int($app_node))
-		$app_node = node_load($app_node);
+function _qdrupal_run_qform($app_token,$form_name,$form_path,$form_template_path) {
+	if(is_int($app_token))
+		$app = qdrupal_application_load($app_token);
 
 	// Try running prepend again just to make sure
-	qdrupal_prepend($app_node);
+	qdrupal_prepend($app);
 
 	if(file_exists($form_path)) {
 		require_once($form_path);
@@ -47,6 +47,7 @@ function _qdrupal_run_qform($app_node,$form_name,$form_path,$form_template_path)
 
 		ob_start();
 		call_user_func(array($form_name,'Run'),$form_name,$form_template_path);
+		//call_user_func(array('ExamplesForm','Run'),'ExamplesForm',$form_template_path);
 		$content = ob_get_clean();
 	}
 	catch (Exception $e) {

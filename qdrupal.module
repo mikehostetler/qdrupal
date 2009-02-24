@@ -14,20 +14,6 @@ require_once("qdrupal_util.php");
  */
 function qdrupal_node_info() {
   return array(
-    'qdrupal_application' => array(
-      'name' => t('QDrupal Application'),
-      'module' => 'qdrupal_application',
-      'description' => t("A QDrupal application is a collection of Qcubed forms with common settings.  Each application has its own database and codegen settings."),
-      'title_label' => t('QDrupal Application Name'),
-      'body_label' => t('Create an Application'),
-    ),
-    'qdrupal_node' => array(
-      'name' => t('QDrupal Node'),
-      'module' => 'qdrupal_node',
-      'description' => t('A qcodo node is a definition of qforms and templating functions for a given application.  Qcubed nodes give you access to the entire library of qcodo functions including the object layer from your database, encapsulated in a drupal node'),
-      'title_label' => t('QDrupal Node'),
-      'body_label' => t('Create a Qcubed application node'),
-    ),
     'qdrupal_link' => array(
       'name' => t('QDrupal Form Link'),
       'module' => 'qdrupal_link',
@@ -49,9 +35,6 @@ function qdrupal_perm() {
     'create qdrupal links',
     'access qdrupal links',
     'edit own qdrupal links',
-    'create qdrupal nodes',
-    'access qdrupal nodes',
-    'edit own qdrupal nodes'
   );
 }
 
@@ -73,68 +56,139 @@ function qdrupal_menu() {
 
   $admin_applications = user_access('administer qdrupal applications');
   $access_link_create = node_access('create', 'qdrupal_link');
-  $access_node_create = node_access('create', 'qdrupal_node');
-
+ 
   $items = array();
+  // FIXME put in a regular /qdrupal link for general settings, or a admin/setting/qdrupal link
 	$items['qdrupal/applications'] = array(
 		'title' => 'QDrupal Applications',
 		'page callback' => 'qdrupal_application_page_overview',
 		'access callback' => $access_application,
 		'type' => MENU_NORMAL_ITEM
 	);
-
-	$items['node/%qdrupal_app/codegen'] = array(
-		'title' => 'Codegen',
+	$items['qdrupal/application/add'] = array(
+		'title' => 'QDrupal Applications',
+		'page callback' => 'qdrupal_application_create',
+		'access callback' => $admin_applications,
+		'type' => MENU_CALLBACK
+	);
+	$items['qdrupal/applications/import'] = array(
+		'title' => 'Import Application',
+		'page callback' => 'qdrupal_application_import',
+		'access callback' => $admin_applications,
+		'type' => MENU_CALLBACK,
+	);
+	// fixme this looks wrong
+	$items['qdrupal/application/build'] = array(
+		'title' => 'New Application',
 		'page callback' => 'qdrupal_application_codegen',
 		'page arguments' => array(1),
 		'access callback' => $admin_applications,
 		'type' => MENU_LOCAL_TASK,
 		'weight' => 6
 	);
+	$items['qdrupal/applications/%'] = array(
+		'title' => 'View',
+		'page callback' => 'qdrupal_application_details',
+		'access callback' => $admin_applications,
+		'page arguments' => array(2),
+		'type' => MENU_CALLBACK,
+		'weight' => -1
+	);
+	$items['qdrupal/applications/%/view'] = array(
+		'title' => 'View',
+		'page callback' => 'qdrupal_application_details',
+		'access callback' => $admin_applications,
+		'page arguments' => array(2),
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'weight' => -1
+	);
+	$items['qdrupal/applications/%/edit'] = array(
+		'title' => 'Edit',
+		'page callback' => 'qdrupal_application_edit',
+		'page arguments' => array(2),
+		'access callback' => $admin_applications,
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 1
+	);
 
-	$items['node/%qdrupal_app/databases'] = array(
+	$items['qdrupal/applications/%/codegen'] = array(
+		'title' => 'Codegen',
+		'page callback' => 'qdrupal_application_codegen',
+		'page arguments' => array(2),
+		'access callback' => $admin_applications,
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 6
+	);
+
+	$items['qdrupal/applications/%/databases'] = array(
 		'title' => 'Databases',
-		'page callback' => 'qdrupal_application_administer',
-		'page arguments' => array(1),
+		'page callback' => 'qdrupal_settings_overview',
+		'page arguments' => array(2),
 		'access callback' => $admin_applications,
 		'type' => MENU_LOCAL_TASK,
 		'weight' => 4
 	);
-
-	$items['node/%qdrupal_app/databases/%'] = array(
-		'title' => 'Databases',
-		'page callback' => 'qdrupal_application_administer',
-		'page arguments' => array(1,3),
+	$items['qdrupal/applications/%/databases/add'] = array(
+		'title' => 'Add Database',
+		'page callback' => 'qdrupal_settings_add',
+		'page arguments' => array(2),
 		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
+		'type' => MENU_CALLBACK
+	);
+
+	$items['qdrupal/applications/%/databases/%/edit'] = array(
+		'title' => 'Databases',
+		'page callback' => 'qdrupal_settings_edit',
+		'page arguments' => array(2,4),
+		'access callback' => $admin_applications,
+		'type' => MENU_CALLBACK,
+		'weight' => 4
+	);
+	
+	$items['qdrupal/applications/%/databases/%/delete'] = array(
+		'title' => 'Databases',
+		'page callback' => 'qdrupal_settings_delete_by_name',
+		'page arguments' => array(2,4),
+		'access callback' => $admin_applications,
+		'type' => MENU_CALLBACK,
 		'weight' => 4
 	);
 
-	$items['node/%qdrupal_app/drafts'] = array(
+	$items['qdrupal/applications/%/drafts'] = array(
 		'title' => 'Drafts',
 		'page callback' => 'qdrupal_application_drafts',
-		'page arguments' => array(1),
+		'page arguments' => array(2),
 		'access callback' => $admin_applications,
 		'type' => MENU_LOCAL_TASK,
 		'weight' => 8
 	);
-
+	$items['qdrupal/applications/%/export'] = array(
+		'title' => 'Export',
+		'page callback' => 'qdrupal_application_export',
+		'page arguments' => array(2),
+		'access callback' => $admin_applications,
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 8
+	);
   return $items;
 }
+
 
 /**
  * Helper function for hook_menu to validate a Qdrupal application node 
  */
-function qdrupal_app_load($nid) {
-	if (!is_numeric($nid)) {
+/*
+function qdrupal_app_load($aid) {
+	if (!is_numeric($aid)) {
 		return FALSE;
 	}
-	$app = node_load($nid);
+	$app = node_load($aid);
 	if ($app->type != "qdrupal_application") {
 		return FALSE;
 	}
 	return $app;
 }
+*/
 
 /**
  * Implementation of hook_theme()
@@ -147,56 +201,6 @@ function qdrupal_theme() {
 		);
 }
 
-/**
- * List all qdrupal nodes for a given application node
- */
-function qdrupal_get_nodes($nid) {
-  $result = db_query('SELECT n.*, q.* FROM {node} n,{qdrupal_node} q where n.nid = q.nid and q.application_id = %d ORDER BY n.changed DESC', $nid);
-  $output = '';
-  $node = node_load($nid);
-	$rows = array();
-  if ($result) {
-    $header = array(t('Node'), t('Operations'));
-    while ($n = db_fetch_object($result)) {
-      $rows[] = array(array('data' => l($n->title,'node/'.$n->nid ),'valign' => 'top'),
-        array('data' => l(t('edit'), 'node/'.$n->nid.'/edit/') . ' '. l(t('delete'), 'node/'.$n->nid.'/delete/'), 'valign' => 'top')
-      );
-    }
-    $output .= theme('table', $header, $rows);
-    $output .= t('<p><a href="!create-qdrupal-node">Create new QDrupal node</a></p>', array('!create-qdrupal-node' => url("node/add/qdrupal-node/$node->shortname")));
-  }
-  else {
-		// fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
-		$output .= t('No QDrupal nodes found. Click here to <a href="!create-qdrupal-nodes">create a new qdrupal node for this application</a>.', array('!create-qdrupal-nodes' => url("node/add/qdrupal-node/$node->shortname")));
-  }
-  return $output;
-}
-
-/**
- * Load all qdrupal links for a given application node
- */
-function qdrupal_get_links($nid) {
-  $result = db_query('SELECT n.*, q.*  FROM {node} n,{qdrupal_link} q
-    where n.nid = q.nid and q.application_id = %d ORDER BY n.changed DESC', $nid);
-  $output = '';
-  $node = node_load($nid);
-	$rows = array();
-  if ($result) {
-  $header = array(t('Link'), t('Operations'));
-    while ($l = db_fetch_object($result)) {
-      $rows[] = array(array('data' => l($l->title,'node/'.$l->nid ),'valign' => 'top'),
-          array('data' => l(t('edit'), 'node/'.$l->nid.'/edit/') . ' '. l(t('delete'), 'node/'.$l->nid.'/delete/'), 'valign' => 'top')
-          );
-    }
-    $output .= theme('table', $header, $rows);
-    $output .= t('<p><a href="!create-qdrupal-link">Create new QDrupal link</a></p>', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$node->shortname")));
-  }
-  else {
-		// fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
-		$output .= t('No QDrupal links found. Click here to <a href="!create-qdrupal-link">create a new qdrupal link for this application</a>.', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$node->shortname")));
-  }
-  return $output;
-}
 
 /**
  * Run a qdrupal page.  This is a simplistic front controller
@@ -284,9 +288,11 @@ function qdrupal_front() {
 /**
  * Function that runs a QDrupal Draft
  */ 
-function qdrupal_application_drafts($node) {
+function qdrupal_application_drafts($shortname) {
   $args = func_get_args();
 	array_shift($args); // Pull the node off the top
+	
+	$app = qdrupal_application_load_by_name($shortname);
 	
   foreach($args as $k => $item) {
     if(preg_match('/[^\/,-_;a-z0-9*]/i', $args[$k])) {
@@ -299,13 +305,14 @@ function qdrupal_application_drafts($node) {
 
   // if there are no additional arguments, display form draft index
   if(sizeof($args) == 0) {
-    qdrupal_prepend($node);
-    drupal_set_title($node->title . " Drafts");
-		drupal_set_breadcrumb(array(
-				l(t('Home'),NULL),
-				l(t($node->title),'node/'.$node->nid),
-				l(t('Drafts'),'node/'.$node->nid.'/drafts')
-		));
+    qdrupal_prepend($app);
+    drupal_set_title($app->title . " Drafts");
+    
+    drupal_set_breadcrumb(array( l(t('Home'),NULL), 
+                                l(t('QDrupal Applications'),'qdrupal/applications'),
+                                l($app->title,'qdrupal/applications/'.$app->shortname),
+                                l('Drafts','qdrupal/applications/'.$app->shortname.'/drafts')
+                                ));
 
     // Iterate through the files in this "form_drafts" folder, looking for files that end in _edit.php or _list.php
     $draft_suffixes = array('_edit.php', '_list.php', '_combo.php');
@@ -346,15 +353,16 @@ OUT;
 OUT;
     print $out;
   } else {
-    qdrupal_prepend($node);
+    qdrupal_prepend($app);
     drupal_set_title(ucfirst($args[0]) . " " . ucfirst($args[1]) . " Draft");
 		drupal_set_breadcrumb(array(
-				l(t('Home'),NULL),
-				l(t($node->title),'node/'.$node->nid),
-				l(t('Drafts'),'node/'.$node->nid.'/drafts'),
-				l(ucfirst($args[0]),'node/'.$node->nid.'/drafts/'.$args[0].'/'.$args[1]),
-				l(ucfirst($args[1]),'node/'.$node->nid.'/drafts/'.$args[0].'/'.$args[1])
-		));
+      l(t('Home'),NULL),
+      l(t('QDrupal Applications'),'qdrupal/applications'),
+      l($app->title,'qdrupal/applications/'.$app->shortname),
+      l('Drafts','qdrupal/applications/'.$app->shortname.'/drafts'),
+      l(ucfirst($args[0]),'qdrupal/applications/'.$app->shortname.'/drafts/'.$args[0].'/'.$args[1]),
+      l(ucfirst($args[1]),'qdrupal/applications/'.$app->shortname.'/drafts/'.$args[0].'/'.$args[1])
+    ));
 
     $drafts = QDRUPAL_APPLICATION_PATH . DS . basename(__FORM_DRAFTS__) . DS;
     $page = $drafts . $args[0] . '_' . $args[1] . '.php';

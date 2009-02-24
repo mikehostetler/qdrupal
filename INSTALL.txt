@@ -10,13 +10,13 @@ INSTALL
 	2. Extract QDrupal to your Drupal Modules folder, either /modules/ or
 	/sites/all/modules/.
 
-  3. Download Zcodo from http://zcodo.com and extract it into the
-  qdrupal folder.  Ensure that the subfolder name is 'zcodo'.
+  3. Download Qcubed from http://qcu.be/ and extract it into the
+  qdrupal folder.  Ensure that the subfolder name is 'qcubed'.
 
   ie. /qdrupal/
-        /zcodo/  <-- The Zcodo library must be extracted and placed here
+        /qcubed/  <-- The Qcubed library must be extracted and placed here
 
-  4. Copy the contents of the 'zcodo_overrides' folder into the Zcodo
+  4. Copy the contents of the 'qcubed_overrides' folder into the qcubed
   folder.  The directory structure has already been provided to ensure
   that the files end up in their correct locations.
 

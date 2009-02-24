@@ -57,29 +57,34 @@ function qdrupal_link_pick_application_form_submit($form_id, $form_values) {
  */
 function qdrupal_link_form($node) {
   global $user;
-
+  watchdog("in form", "for qdrupal_link create");
   // Load the Application ID
+  
   if (empty($node->application_id)) {
-    $application_id = arg(3);
-    if (!empty($application_id)) {
-      if (is_numeric($application_id)) {
-        $node->application_id = db_result(db_query(db_rewrite_sql('SELECT q.nid FROM {qdrupal_application} q WHERE a.application_id = %d', 'q'), $application_id), 0);
+    // Try to get application from url arguments
+    $application_token = arg(3);
+    if (!empty($application_token)) {
+      if (is_numeric($application_token)) {
+        watchdog("Selecting app, id", $application_token);
+        $node->application_id = db_result(db_query(db_rewrite_sql('SELECT q.nid FROM {qdrupal_application} q WHERE a.application_id = %d', 'q'), $application_token), 0);
       }
       else {
-        $node->application_id = db_result(db_query(db_rewrite_sql("SELECT q.nid FROM {qdrupal_application} q WHERE q.shortname = '%s'", 'q'), $application_id), 0);
+        watchdog("Selecting app,sh", $application_token);
+        $node->application_id = db_result(db_query(db_rewrite_sql("SELECT q.aid FROM {qdrupal_application} q WHERE q.shortname = '%s'", 'q'), $application_token), 0);
       }
     }
   }
+  // We should have a valid applicaiton id now
   $application_id = $node->application_id;
-
+  watchdog("appid for link", $application_id);
   if (empty($application_id)) {
     drupal_set_message(t('Invalid application selected.'), 'error');
     drupal_goto('node/add/qdrupal-link');
     return;
   }
 
-  $app_node = node_load($application_id);
-  qdrupal_bootstrap($app_node);
+  $app = qdrupal_application_load($application_id);
+  qdrupal_bootstrap($app);
   $type = node_get_types('type', $node);
 
   $form['application_id'] = array(
@@ -121,7 +126,7 @@ function qdrupal_link_form($node) {
 }
 
 /**
- * Insert qcodo link (hook_insert).
+ * Insert qcubed link (hook_insert).
  */
 function qdrupal_link_insert($node) {
 	db_query("INSERT INTO {qdrupal_link} (nid, vid, application_id, form_path) VALUES (%d, %d, %d, '%s')", $node->nid, $node->vid, $node->application_id, $node->form_path);
@@ -147,9 +152,8 @@ function qdrupal_link_load($node) {
  */
 function qdrupal_link_view($node, $teaser = FALSE, $page = FALSE) {
   if($page) {
-	  $app_node = node_load($node->application_id);
-    qdrupal_prepend($app_node);
-
+    $app = qdrupal_application_load($node->application_id);
+    qdrupal_prepend($app);
     /*
     if(variable_get('qdrupal_enable_profiling',false)) {
       foreach(QApplication::$Database as $objDb) {
@@ -157,12 +161,22 @@ function qdrupal_link_view($node, $teaser = FALSE, $page = FALSE) {
       }
     }
      */
-
-    try {
-      ob_start();
+    try {    
       $qform_path = __QDRUPAL_PAGES__ . $node->form_path;
-	    require_once($qform_path);
-      $content = ob_get_clean();
+      watchdog("qdrupal", "qform path is ".$qform_path);
+      $template_path = qdrupal_tmpl_path($qform_path);
+      watchdog("qdrupal", "template path is ".$template_path);
+      ob_start();    	
+    	require_once($node->form_path);
+    	// todo add in profiling routine here
+    	//if(variable_get("qdrupal_enable_profiling",false)) QApplication::$Database[1]->OutputProfiling();
+    	$qcodo_content = ob_get_clean();
+      $content= _qdrupal_run_qform(
+    		$app,
+    		$node->title,
+    		$qform_path,
+    		$template_path);
+      //$content = ob_get_clean();
     }
     catch (QDrupalException $e) {
 	    $content = $e->getMessage();
@@ -198,8 +212,34 @@ function qdrupal_link_view($node, $teaser = FALSE, $page = FALSE) {
 }
 
 /**
- * Delete qcodo link (hook_delete()).
+ * Delete qcubed link (hook_delete()).
  */
 function qdrupal_link_delete($node) {
  	db_query('DELETE FROM {qdrupal_link} WHERE nid = %d', $node->nid);
+}
+
+/**
+ * Load all qdrupal links for a given application node
+ */
+function qdrupal_get_links($aid) {
+  $result = db_query('SELECT n.*, q.*  FROM {node} n,{qdrupal_link} q
+    where n.nid = q.nid and q.application_id = %d ORDER BY n.changed DESC', $aid);
+  $output = '';
+  $app = qdrupal_application_load($aid);
+	$rows = array();
+  if ($result) {
+  $header = array(t('Link'), t('Operations'));
+    while ($l = db_fetch_object($result)) {
+      $rows[] = array(array('data' => l($l->title,'node/'.$l->nid ),'valign' => 'top'),
+          array('data' => l(t('edit'), 'node/'.$l->nid.'/edit/') . ' '. l(t('delete'), 'node/'.$l->nid.'/delete/'), 'valign' => 'top')
+          );
+    }
+    $output .= theme('table', $header, $rows);
+    $output .= t('<p><a href="!create-qdrupal-link">Create new QDrupal link</a></p>', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$app->shortname")));
+  }
+  else {
+		// fixme this function should direct to the qdrupal-node add page and should PREPOPULATE application select box
+		$output .= t('No QDrupal links found. Click here to <a href="!create-qdrupal-link">create a new qdrupal link for this application</a>.', array('!create-qdrupal-link' => url("node/add/qdrupal-link/$app->shortname")));
+  }
+  return $output;
 }

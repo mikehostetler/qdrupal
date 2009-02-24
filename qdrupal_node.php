@@ -3,7 +3,7 @@
 // $Name$
 
 /**
- * Form for creating new qcodo page
+ * Form for creating new qcubed page
  */
 function qdrupal_node_form(&$node) {
   if (empty($node->application_id)) {
@@ -32,7 +32,7 @@ function qdrupal_node_form(&$node) {
     '#default_value' => $node->title,
     '#required' => TRUE,
     '#weight' => 0,
-    '#description' => t('qcodo page title'),
+    '#description' => t('qcubed page title'),
   );
   $form['qform'] = array(
     '#type' => 'textarea',
@@ -57,7 +57,7 @@ function qdrupal_node_form(&$node) {
 }
 
 /**
- * Insert qcodo node (hook_insert).
+ * Insert qcubed node (hook_insert).
  */
 function qdrupal_node_insert($node) {
 	//get application node
@@ -127,7 +127,7 @@ function qdrupal_node_view($node, $teaser, $page) {
     }
     catch (Exception $e) {
       ob_start();
-      QcodoHandleException($e,FALSE);
+      QcubedHandleException($e,FALSE);
       $content = ob_get_clean();
     }
   }
@@ -146,7 +146,7 @@ function qdrupal_node_view($node, $teaser, $page) {
 }
 
 /**
- * Delete qcodo page (hook_delete()).
+ * Delete qcubed page (hook_delete()).
  */
 function qdrupal_node_delete($node) {
 	$app_node = node_load($node->application_id);

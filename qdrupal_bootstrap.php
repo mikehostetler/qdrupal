@@ -2,21 +2,21 @@
 // $Id$
 
 /**
- * Bootstrap qcodo into drupal
- * This function duplicates the configuration.inc.php file found in Zcodo
+ * Bootstrap qcubed into drupal
+ * This function duplicates the configuration.inc.php file found in Qcubed
  */
-function qdrupal_bootstrap(&$node) {
+function qdrupal_bootstrap(&$app) {
   if (defined('__BOOTSTRAP_INCLUDED__')) {
 		return;
 	}
 
 	define('__BOOTSTRAP_INCLUDED__', 1);
 
-	if($node->is_module == 1) {
-		$qdrupal_path = drupal_get_path('module',$node->shortname);
+	if($app->is_module == 1) {
+		$qdrupal_path = drupal_get_path('module',$app->shortname);
 	}
 	else {
-		$qdrupal_path = _qdrupal_application_path($node);
+		$qdrupal_path = _qdrupal_application_path($app);
 	}
 
 	//ob_clean(); echo '<pre>'; var_dump($qdrupal_path); print_r($node); exit;
@@ -28,13 +28,13 @@ function qdrupal_bootstrap(&$node) {
   define ('__VIRTUAL_DIRECTORY__', '');
   define('QDRUPAL_ROOT',dirname(__FILE__));
 
-	_qdrupal_check_zcodo_installed();
+	_qdrupal_check_qcubed_installed();
 
-	if($node->is_module == 1) {
+	if($app->is_module == 1) {
 		define('APPLICATION_NAME', '');
 	}
 	else {
-		define('APPLICATION_NAME', DS . $node->shortname);
+		define('APPLICATION_NAME', DS . $app->shortname);
 	}
 
   define('DRUPAL_ROOT', __DOCROOT__ . base_path());
@@ -44,12 +44,13 @@ function qdrupal_bootstrap(&$node) {
   define('QCODO_DEFAULT_CODEGEN', QCODO_DIST . DS . 'wwwroot' . DS . '_devtools' . DS . 'codegen_settings.xml');
   define('QCODO_DEFAULT_CONFIGURATION', QCODO_DIST . DS . 'wwwroot' .  DS . 'includes' . DS . 'configuration_pro.inc.php');
 
-	_qdrupal_define_application_databases($node->nid);
+	_qdrupal_define_application_databases($app->aid);
   
   define ('ALLOW_REMOTE_ADMIN', user_access('administer qdrupal applications'));
   define ('__URL_REWRITE__', 'apache'); 
   define ('__DEVTOOLS_CLI__', __DOCROOT__ . __SUBDIRECTORY__ . DS . '..' . DS . '_devtools_cli');
   define ('__INCLUDES__', __DOCROOT__ .  __SUBDIRECTORY__ . DS . 'includes');
+  // FIXME here is one of the last 'qcodo' references
   define ('__QCODO__', __INCLUDES__ . DS . 'qcodo');
   define ('__QCODO_CORE__', __INCLUDES__ . DS . 'qcodo' . DS . '_core');
   define ('__DATA_CLASSES__', QDRUPAL_APPLICATION_PATH . DS . 'data_classes');
@@ -91,14 +92,14 @@ function qdrupal_bootstrap(&$node) {
 /**
   * Run the QDrupal prepend.inc.php file
   */
-function qdrupal_prepend(&$node) {
+function qdrupal_prepend(&$app) {
   if (defined('__PREPEND_INCLUDED__')) {
 		return;
 	}
 
 	define('__PREPEND_INCLUDED__', 1);
 
-	qdrupal_bootstrap($node);
+	qdrupal_bootstrap($app);
 	require(__QCODO_CORE__ . DS . 'qcodo.inc.php');
 
 	if(file_exists(QDRUPAL_APPLICATION_PATH . DS . 'application.class.php')) {
@@ -142,15 +143,15 @@ function qdrupal_prepend(&$node) {
 	 */
 }
 
-function _qdrupal_check_zcodo_installed() {
-  // Detect whether we're running zcodo or qcodo
-  if(file_exists(QDRUPAL_ROOT . DS . 'qcodo')) {
-    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'qcodo');
-    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'qcodo'.DS.'wwwroot');
+function _qdrupal_check_qcubed_installed() {
+  // Detect whether we're running qcubed or qcubed
+  if(file_exists(QDRUPAL_ROOT . DS . 'qcubed')) {
+    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'qcubed');
+    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'qcubed'.DS.'wwwroot');
   }
-  elseif(file_exists(QDRUPAL_ROOT . DS . 'zcodo')) {
-    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'zcodo');
-    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'zcodo'.DS.'wwwroot');
+  elseif(file_exists(QDRUPAL_ROOT . DS . 'qcubed')) {
+    define('QCODO_DIST',QDRUPAL_ROOT . DS . 'qcubed');
+    define ('__SUBDIRECTORY__', base_path().drupal_get_path('module','qdrupal').DS.'qcubed'.DS.'wwwroot');
   }
   else {
     // Keep old path for reference.
@@ -167,8 +168,7 @@ function _qdrupal_check_zcodo_installed() {
 
     if (empty($return) || $return == MENU_NOT_FOUND || $return == MENU_ACCESS_DENIED) {
       drupal_set_title(t('QDrupal Fatal Error'));
-      $return = t('The <a href="http://zcodo.com">Zcodo</a> or <a
-        href="http://qcodo.com">Qcodo</a> libraries are not installed!
+      $return = t('The <a href="http://qcu.be">Qcubed</a> libraries are not installed!
         Please read the INSTALLATION instructions for the QDrupal module
         and install the correct libraries.');
     }
@@ -176,9 +176,9 @@ function _qdrupal_check_zcodo_installed() {
   }
 }
 
-function _qdrupal_define_application_databases($nid) {
+function _qdrupal_define_application_databases($aid) {
   // load database settings
-  $settings = qdrupal_settings_load($nid);
+  $settings = qdrupal_settings_load($aid);
   $count = 1;
   if ($settings) {
     foreach ($settings as $s) {

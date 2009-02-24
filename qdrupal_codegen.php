@@ -2,34 +2,36 @@
 // $Id$
 
 /**
- * Function that runs the Qcodo Code Generator
+ * Function that runs the Qcubed Code Generator
  */ 
-function qdrupal_application_codegen($node) {
-	global $qdrupal_node;
-	$qdrupal_node = $node;
-	drupal_set_title($node->title ." Codegen");
+function qdrupal_application_codegen($shortname) {
+	global $qdrupal_app;
+	$app = qdrupal_application_load_by_name($shortname);
+	$qdrupal_app = $app;
+	drupal_set_title($app->title ." Codegen");
 	drupal_set_breadcrumb(array(
 			l(t('Home'),NULL),
-			l(t($node->title),'node/'.$node->nid),
-			l(t('Codegen'),'node/'.$node->nid.'/codegen')
+      l(t('QDrupal Applications'),'qdrupal/applications'),
+			l(t($app->title),'qdrupal/applications/'.$app->shortname),
+			l(t('Codegen'),'qdrupa/applications/'.$app->shortname.'/codegen')
 		));
 
-	qdrupal_prepend($node);
+	qdrupal_prepend($app);
 	return _qdrupal_run_qform(
-		$node,
+		$app,
 		'QDrupalCodegen',
 		QDRUPAL_ROOT . '/pages/qdrupal_codegen.php',
 		QDRUPAL_ROOT . '/templates/qdrupal_codegen.tpl.php');
 }
 
 function qdrupal_run_codegen() {
-	global $qdrupal_node;
-	$node = $qdrupal_node;
+	global $qdrupal_app;
+	$app = $qdrupal_app;
 
 	$strXML = <<<XML
 <?xml version="1.0" encoding="UTF-8" ?>
 <codegen>
-<name application="{$node->title}"/>
+<name application="{$app->title}"/>
 <templateEscape begin="&lt;%" end="%&gt;"/>
 <dataSources>
 </dataSources>
@@ -40,10 +42,12 @@ XML;
 
   // get codegen settings from database
   // put settings xml variable
-  $settings = qdrupal_settings_load($node->nid);
+  $settings = qdrupal_settings_load($app->aid);
+  watchdog("qdrupal", "codegen started for settings: " . print_r($settings,1));
   $count = 1;
   if ($settings) {
     foreach ($settings as $s) {
+      watchdog("qdrupal", "setting: " . print_r($s,1));
       $database = $objXML->dataSources->addChild('database');
       $database->addAttribute('index', $count);
 
@@ -71,12 +75,12 @@ XML;
 
       $relationships = $database->addChild('relationshipsScript');
       $relationships->addAttribute('filepath',$s->setting['relationships']);
-      $relationships->addAttribute('format','qcodo');
+      $relationships->addAttribute('format','qcubed');
       $count++;
     }
   }
 
-	qdrupal_prepend($node);
+	qdrupal_prepend($app);
   $codegen_file = QDRUPAL_APPLICATION_PATH . DS . 'codegen_settings.xml';
 
   // Output xml to filesystem
