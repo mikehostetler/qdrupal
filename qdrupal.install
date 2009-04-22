@@ -23,12 +23,7 @@ function qdrupal_schema() {
 		'description' => t('QDrupal Application Data Table.'),
 		'fields' => array(
 			'aid' => array(
-				'description' => t('The primary identifier for an application.'),
-				'type' => 'serial',
-				'unsigned' => TRUE,
-				'not null' => TRUE),
-			'shortname' => array(
-				'description' => t('The shortname of the application. Used in URL and machine-readable labels'),
+				'description' => t('The identifier of the application. Used in URL and machine-readable labels'),
 				'type' => 'varchar',
 				'length' => 50,
 				'not null' => TRUE,
@@ -36,13 +31,12 @@ function qdrupal_schema() {
 			'title' => array(
   			'description' => t('The title of the application. This is the human readable name for the application'),
   			'type' => 'varchar',
-  			'length' => 50,
+  			'length' => 128,
   			'not null' => TRUE,
   			'default' => ''),
   		'description' => array(
     		'description' => t('A description of the application.'),
-    		'type' => 'varchar',
-    		'length' => 50,
+    		'type' => 'text',
     		'not null' => TRUE,
     		'default' => ''),
 			'is_module' => array(
@@ -68,12 +62,12 @@ function qdrupal_schema() {
 				'unsigned' => TRUE,
 				'not null' => TRUE,
 				'default' => 0),
-			'application_id' => array(
+			'aid' => array(
 				'description' => t('The {qdrupal_application}.aid associated with this node.'),
-				'type' => 'int',
-				'unsigned' => TRUE,
+				'type' => 'varchar',
+				'length' => 50,
 				'not null' => TRUE,
-				'default' => 0),
+				'default' => ''),
 			'form_path' => array(
 				'description' => t('The path to the QForm file linked with this node.'),
 				'type' => 'varchar',
@@ -87,31 +81,26 @@ function qdrupal_schema() {
 		'primary key' => array('vid')
 	);
 
-	$schema['qdrupal_setting'] = array(
-		'description' => t('QDrupal Settings Table.'),
+	$schema['qdrupal_profile'] = array(
+		'description' => t('QDrupal Profile Table.'),
 		'fields' => array(
-			'sid' => array(
-				'description' => t('The primary identifier for a Qdrupal application settings.'),
-				'type' => 'serial',
-				'unsigned' => TRUE,
-				'not null' => TRUE),
 			'aid' => array(
-  				'description' => t('A link to a specific application settings.'),
-  				'type' => 'int',
-  				'unsigned' => TRUE,
-  				'not null' => TRUE,
-  				'default' => 0),
+				'description' => t('The identifier of the application. Used in URL and machine-readable labels'),
+				'type' => 'varchar',
+				'length' => 50,
+				'not null' => TRUE,
+				'default' => ''),
 			'name' => array(
-				'description' => t('Settings name.'),
+				'description' => t('Profile name.'),
 				'type' => 'varchar',
 				'length' => 128,
 				'not null' => TRUE,
 				'default' => ''),
 			'setting' => array(
-				'description' => t('Settings value.'),
+				'description' => t('Profile value.'),
 				'type' => 'text'),
 			),
-		'primary key' => array('sid','name')
+		'primary key' => array('aid','name')
 	);
 
 	return $schema;

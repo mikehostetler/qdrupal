@@ -1,13 +1,16 @@
 <?php
 // $Id$
 
-require_once("qdrupal_bootstrap.php");
-require_once("qdrupal_codegen.php");
-require_once("qdrupal_application.php");
-require_once("qdrupal_node.php");
-require_once("qdrupal_link.php");
-require_once("qdrupal_settings.php");
-require_once("qdrupal_util.php");
+require_once('qdrupal.link.inc');
+
+/**
+ * Implementation of hook_init()
+ */
+function qdrupal_init() {
+  // shouldn't this be in hook_load or hook_view, such that its only run
+  // on appropriate nodes
+  drupal_add_css(drupal_get_path('module', 'qdrupal') .'/qdrupal.css');
+}
 
 /**
  * Implementation of hook_node_info().
@@ -23,172 +26,16 @@ function qdrupal_node_info() {
     ),
   );
 }
- 
+
 /**
  * Implementation of hook_perm().
  */
 function qdrupal_perm() {
   return array(
-		'create qdrupal applications',
-    'administer qdrupal applications',
-    'access qdrupal applications',
-    'create qdrupal links',
-    'access qdrupal links',
-    'edit own qdrupal links',
+    'administer qdrupal',
+    'access qdrupal'
   );
 }
-
-/**
- * Implementation of hook_init()
- */
-function qdrupal_init() {
-	drupal_add_css(drupal_get_path('module', 'qdrupal') .'/qdrupal.css');
-}
-
-/**
- * Implementation of hook_menu().
- */
-function qdrupal_menu() {
-  $access_application_all = user_access('access qdrupal applications');
-  $access_application_own = user_access('access own qdrupal application');
-  $access_application_admin = user_access('administer qdrupal applications');
-  $access_application = $access_application_all || $access_application_own || $access_application_admin;
-
-  $admin_applications = user_access('administer qdrupal applications');
-  $access_link_create = node_access('create', 'qdrupal_link');
- 
-  $items = array();
-  // FIXME put in a regular /qdrupal link for general settings, or a admin/setting/qdrupal link
-	$items['qdrupal/applications'] = array(
-		'title' => 'QDrupal Applications',
-		'page callback' => 'qdrupal_application_page_overview',
-		'access callback' => $access_application,
-		'type' => MENU_NORMAL_ITEM
-	);
-	$items['qdrupal/application/add'] = array(
-		'title' => 'QDrupal Applications',
-		'page callback' => 'qdrupal_application_create',
-		'access callback' => $admin_applications,
-		'type' => MENU_CALLBACK
-	);
-	$items['qdrupal/applications/import'] = array(
-		'title' => 'Import Application',
-		'page callback' => 'qdrupal_application_import',
-		'access callback' => $admin_applications,
-		'type' => MENU_CALLBACK,
-	);
-	// fixme this looks wrong
-	$items['qdrupal/application/build'] = array(
-		'title' => 'New Application',
-		'page callback' => 'qdrupal_application_codegen',
-		'page arguments' => array(1),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 6
-	);
-	$items['qdrupal/applications/%'] = array(
-		'title' => 'View',
-		'page callback' => 'qdrupal_application_details',
-		'access callback' => $admin_applications,
-		'page arguments' => array(2),
-		'type' => MENU_CALLBACK,
-		'weight' => -1
-	);
-	$items['qdrupal/applications/%/view'] = array(
-		'title' => 'View',
-		'page callback' => 'qdrupal_application_details',
-		'access callback' => $admin_applications,
-		'page arguments' => array(2),
-		'type' => MENU_DEFAULT_LOCAL_TASK,
-		'weight' => -1
-	);
-	$items['qdrupal/applications/%/edit'] = array(
-		'title' => 'Edit',
-		'page callback' => 'qdrupal_application_edit',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 1
-	);
-
-	$items['qdrupal/applications/%/codegen'] = array(
-		'title' => 'Codegen',
-		'page callback' => 'qdrupal_application_codegen',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 6
-	);
-
-	$items['qdrupal/applications/%/databases'] = array(
-		'title' => 'Databases',
-		'page callback' => 'qdrupal_settings_overview',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 4
-	);
-	$items['qdrupal/applications/%/databases/add'] = array(
-		'title' => 'Add Database',
-		'page callback' => 'qdrupal_settings_add',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_CALLBACK
-	);
-
-	$items['qdrupal/applications/%/databases/%/edit'] = array(
-		'title' => 'Databases',
-		'page callback' => 'qdrupal_settings_edit',
-		'page arguments' => array(2,4),
-		'access callback' => $admin_applications,
-		'type' => MENU_CALLBACK,
-		'weight' => 4
-	);
-	
-	$items['qdrupal/applications/%/databases/%/delete'] = array(
-		'title' => 'Databases',
-		'page callback' => 'qdrupal_settings_delete_by_name',
-		'page arguments' => array(2,4),
-		'access callback' => $admin_applications,
-		'type' => MENU_CALLBACK,
-		'weight' => 4
-	);
-
-	$items['qdrupal/applications/%/drafts'] = array(
-		'title' => 'Drafts',
-		'page callback' => 'qdrupal_application_drafts',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 8
-	);
-	$items['qdrupal/applications/%/export'] = array(
-		'title' => 'Export',
-		'page callback' => 'qdrupal_application_export',
-		'page arguments' => array(2),
-		'access callback' => $admin_applications,
-		'type' => MENU_LOCAL_TASK,
-		'weight' => 8
-	);
-  return $items;
-}
-
-
-/**
- * Helper function for hook_menu to validate a Qdrupal application node 
- */
-/*
-function qdrupal_app_load($aid) {
-	if (!is_numeric($aid)) {
-		return FALSE;
-	}
-	$app = node_load($aid);
-	if ($app->type != "qdrupal_application") {
-		return FALSE;
-	}
-	return $app;
-}
-*/
 
 /**
  * Implementation of hook_theme()
@@ -196,186 +43,326 @@ function qdrupal_app_load($aid) {
 function qdrupal_theme() {
 	return array(
 		'application_summary' => array(
-				'arguments' => array('application' => NULL)
-			)
-		);
+			'arguments' => array('application' => NULL)
+		),
+		'application_detail' => array(
+			'arguments' => array('app' => NULL)
+		)
+	);
 }
 
+/**
+ * Implementation of hook_menu().
+ */
+function qdrupal_menu() {
+	$items = array();
+	$items['qdrupal-link/qforms'] = array(
+		'page callback' => 'qdrupal_link_qforms',
+		'access arguments' => array('administer_qdrupal'),
+		'type' => MENU_CALLBACK,
+    );
+	$items['admin/build/qdrupal'] = array(
+		'title' => 'QDrupal Applications',
+		'page callback' => 'qdrupal_admin_overview',
+		'access arguments' => array('administer qdrupal'),
+		'description' => t('Create and manage QDrupal applications, profiles, and nodes.'),
+		'file' => 'qdrupal.admin.inc'
+	);
+	$items['admin/build/qdrupal/list'] = array(
+		'title' => 'List',
+		'type' => MENU_DEFAULT_LOCAL_TASK
+	);
+	$items['admin/build/qdrupal/add'] = array(
+		'title' => 'Add Application',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_application_form'),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.admin.inc',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 1
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid'] = array(
+		'title' => 'View',
+		'page callback' => 'qdrupal_application_overview',
+		'page arguments' => array(3),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.admin.inc',
+		'weight' => -1
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/view'] = array(
+		'title' => 'View',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/edit'] = array(
+		'title' => 'Edit',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_application_form',3),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'qdrupal.admin.inc',
+		'weight' => 1
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/delete'] = array(
+		'title' => 'Edit',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_application_delete_confirm',3),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.admin.inc',
+	);
+
+	$items['admin/build/qdrupal/%qdrupal_app_valid/profile'] = array(
+		'title' => 'Profiles',
+		'page callback' => 'qdrupal_profile_overview',
+		'page arguments' => array(3),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.profile.inc',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 4
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/profile/view'] = array(
+		'title' => 'List',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/profile/add'] = array(
+		'title' => 'Add Profile',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_profile_form',3),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'qdrupal.profile.inc',
+		'weight' => 4
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/profile/%qdrupal_profile_valid/edit'] = array(
+		'title' => 'Edit',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_profile_form',3,5),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.profile.inc',
+		'weight' => 4
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/profile/%qdrupal_profile_valid/delete'] = array(
+		'title' => '',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_profile_delete_confirm',3,5),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_CALLBACK,
+		'file' => 'qdrupal.profile.inc',
+		'weight' => 6
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/codegen'] = array(
+		'title' => 'Codegen',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('qdrupal_codegen',3),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'qdrupal.codegen.inc',
+		'weight' => 6
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/drafts'] = array(
+		'title' => 'Drafts',
+		'page callback' => 'qdrupal_drafts_overview',
+		'page arguments' => array(3),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+		'file' => 'qdrupal.drafts.inc',
+		'weight' => 8
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/drafts/%'] = array(
+		'title' => 'Drafts',
+		'page callback' => 'qdrupal_draft_qform',
+		'page arguments' => array(3,5),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.drafts.inc',
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/drafts/%/list'] = array(
+		'title' => 'List',
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/drafts/%/edit'] = array(
+		'title' => 'Drafts',
+		'page callback' => 'qdrupal_draft_qform',
+		'page arguments' => array(3,5,6),
+		'access arguments' => array('administer qdrupal'),
+		'file' => 'qdrupal.drafts.inc',
+	);
+  /*
+	$items['admin/build/qdrupal/import'] = array(
+		'title' => 'Import Application',
+		'page callback' => 'qdrupal_application_import',
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['admin/build/qdrupal/%qdrupal_app_valid/export'] = array(
+		'title' => 'Export',
+		'page callback' => 'qdrupal_application_export',
+		'page arguments' => array(2),
+		'access arguments' => array('administer qdrupal'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 8
+	);
+  */
+  return $items;
+}
 
 /**
- * Run a qdrupal page.  This is a simplistic front controller
+ * Helper function for hook_menu to validate a QDrupal application node 
  */
-function qdrupal_front() {
-  global $args;
-  $args = func_get_args();
+function qdrupal_app_valid_load($aid) {
+  if($app = qdrupal_application_load($aid)) {
+    return $app;
+  }
+	return FALSE;
+}
 
-  foreach($args as $k => $item) {
-    if(preg_match('/[^\/,-_;a-z0-9*]/i', $args[$k]))
-      unset($args[$k]);
-    elseif(trim($args[$k]) == "")
-      unset($args[$k]);
+/**
+ * Helper function for hook_menu to validate a QDrupal Application Profile
+ */
+function qdrupal_profile_valid_load($name) {
+  $aid = arg(3);
+  if($profile = qdrupal_profile_load($aid,$name)) {
+    if (sizeof($profile) == 1) {
+      $profile = array_shift($profile);
+    }
+    return $profile;
   }
-  // Throw on a Default
-  if(sizeof($args) == 0) {
-    $args[] = 'index';
-  }
-  // Backards compat?
-  if(sizeof($args) == 1) {
-    // FIXME do qdrupal_font backwards compat here?
-  }
-  $nid=$args[0];
-  $node = node_load($nid);
-  qdrupal_bootstrap($node);
-  $formDrafts = __DOCROOT__ . __FORM_DRAFTS__ . DIRECTORY_SEPARATOR;
-  $customForms = __QDrupal_PAGES__. DIRECTORY_SEPARATOR;
+	return FALSE;
+}
 
-  // Recursively search for a file to display
-  $pageFound = false;
-  $type="";
-  // Construct the file path
-  // FIXME this is now a more simplistic front controller, may need enhancement
-  $pageStr = $args[1];
-  if(!stristr($pageStr,'.php')) {
-    $pageStr .= ".php";
-  }
-  if(file_exists($customForms . $pageStr)) {
-    // We've got a hit! 
-    $page = $customForms . $pageStr;
-    $pageFound = true;
-    $type= "pages";
-    
-  }
-  elseif(file_exists($formDrafts . $pageStr)) {
-    // We've got a hit!
-    $page = $formDrafts . $pageStr;
-    $pageFound = true;
-    $type="Form Drafts";
-  }
-  if(!$pageFound) {
-    drupal_not_found($pageStr);
-    return;
-  }
-  $new_breadcrumb[] = l("Home","");
-  $path = $config['NAME'];
+/**
+ * QDrupal Applications API.
+ */
+function qdrupal_application_create($aid,$title,$description,$is_module) {
+  require_once('qdrupal.admin.inc');
+  db_query("INSERT INTO {qdrupal_application} (aid,title,description,is_module) 
+  VALUES ('%s', '%s', '%s', '%s')", $aid,$title,$description,$is_module);
+  qdrupal_application_update_disk(qdrupal_application_load($aid));
+}
 
-  $newpath = $path . "/node/".$node->nid;
-  $newarg = $node->title;
-  $new_breadcrumb[] = l($newarg,$newpath);
-  
-  // FIXME This should be a case statement on type
-  $newpath = $path ."/node/".$node->nid. "/formdrafts";
-  $newarg = "Form Drafts";
-  $new_breadcrumb[] = l($newarg,$newpath);
-  
-  $newarg = ucwords(str_replace(array('-','_','/','\\',',',';','.php'),' ',$args[1]));
-  $newpath = $path ."/qdrupal/".$node->nid. "/".$args[1];
-  $new_breadcrumb[] = l($newarg,$newpath);
-      
-  drupal_set_breadcrumb($new_breadcrumb);
-  drupal_set_title(" ");
+function qdrupal_application_update($aid,$title,$description,$is_module) {
+  db_query("UPDATE {qdrupal_application} SET title = '%s',  
+  description = '%s', is_module = %d WHERE aid = '%s'", 
+  $title, $description, $is_module, $aid);
+}
 
+function qdrupal_application_delete($app) {
+  watchdog('qdrupal', 'Deleted application %app', array('%app' => $form_state['values']['app']->title));
+  db_query('DELETE FROM {qdrupal_application} WHERE aid = \'%s\'', $app->aid);
+  db_query('DELETE FROM {qdrupal_profile} WHERE aid = \'%s\'', $app->aid);
+  db_query('DELETE FROM {qdrupal_link} WHERE aid = \'%s\'', $app->aid);		
+}
+
+function qdrupal_application_load($aid) {
+  $app = db_fetch_object(db_query("SELECT aid, title, description, is_module FROM {qdrupal_application} WHERE aid = '%s'", $aid));
+  if($app) return $app;
+  return FALSE;
+}
+
+function qdrupal_application_path($app) {
+  if( $app->is_module ) {
+    $app_path = drupal_get_path('module',$app->aid);
+  } else {
+    $main_path = file_create_path('qdrupal');
+    file_check_directory($main_path, FILE_CREATE_DIRECTORY);
+    $app_path = file_create_path($main_path . DIRECTORY_SEPARATOR . $app->aid);
+    file_check_directory($app_path, FILE_CREATE_DIRECTORY);
+  }
+
+  return $app_path;
+}
+
+function qdrupal_application_disk_path($app) {
+  return $_SERVER['DOCUMENT_ROOT'].'/'.qdrupal_application_path($app);
+}
+
+/**
+ * QDrupal Application Profiles API.
+ */
+function qdrupal_profile_load($aid, $name = NULL) {
+  if (is_null($name)) {
+	  $result = db_query('SELECT aid, name, setting FROM {qdrupal_profile} WHERE aid = "%s"',array($aid));
+  }
+  else {
+	  $result = db_query('SELECT aid, name, setting FROM {qdrupal_profile} WHERE aid = "%s" AND name = "%s"', array($aid, $name));
+  }
+
+  $profiles = array();
+	while ($data = db_fetch_object($result)) {
+		$data->setting = unserialize($data->setting);
+		$profiles[$data->name] = $data;
+	}
+
+  if (sizeof($profiles) == 0) {
+    return FALSE;
+  }
+
+  return $profiles;
+}
+
+function qdrupal_profile_save($aid, $name, $values) {
+  if(qdrupal_profile_load($aid,$name)) {
+    db_query('UPDATE {qdrupal_profile} SET aid = "%s", name = "%s", setting = "%s" WHERE aid = "%s" AND name = "%s"',$aid,$name,serialize($values),$aid,$name);
+    drupal_set_message(t('Updated profile %profile.', array('%profile' => $name)));
+    watchdog('qdrupal', 'Updated profile %profile for application %app', array('%profile' => $name, '%app' => $aid));
+  }
+  else {
+    db_query('INSERT INTO {qdrupal_profile} VALUES ("%s", "%s", "%s")',$aid,$name,serialize($values));
+    drupal_set_message(t('Added profile %profile.', array('%profile' => $name)));
+    watchdog('qdrupal', 'Added profile %profile for application %app', array('%profile' => $name, '%app' => $aid));
+  }
+}
+
+function qdrupal_profile_delete($aid,$name) {
+  db_query('DELETE FROM {qdrupal_profile} WHERE aid = "%s" AND name = "%s"', $aid, $name);
+}
+
+/*
+ * QDrupal general API
+ */
+function qdrupal_prepend(&$app) {
+  require_once('qdrupal.bootstrap.inc');
+  _qdrupal_prepend($app);
+}
+
+/*
+ * Function to run a qform. This function can be invoked in two manners:
+ * 1) with only two arguments, in which case the specified file is assumed
+ *    to have the 'run qform' code in it.
+ * 2) with four arguments, in which case the form class name and template
+ *    must also be specified so the form can be invoked externally. It is 
+ *    assumed that the form does not have this information in it.
+ */
+function qdrupal_run_qform($app,$form_path,$form_template_path = NULL,$form_name = NULL) {
+  if(!file_exists($form_path)) drupal_not_found($draft_file);
+
+  qdrupal_prepend($app);
+
+  if( $form_template_path == NULL && $form_name == NULL ) {
+    ob_start();
+    require_once($form_path);
+    return ob_get_clean();
+  }  
+
+  require_once($form_path);
+
+  try {
+  if(!class_exists($form_name)) throw new Exception("Class $form_name does not exist!");
   ob_start();
-  // FIXME need to work on qdrupal profiling options
-  if(variable_get("qdrupal_enable_profiling",false))
-    QApplication::$Database[1]->EnableProfiling();
-  require_once($page);
-  if(variable_get("qdrupal_enable_profiling",false))
-    QApplication::$Database[1]->OutputProfiling();
+  call_user_func(array($form_name,'Run'),$form_name,$form_template_path);
   $content = ob_get_clean();
+  } catch (Exception $e) {
+    ob_start();
+    QcodoHandleException($e,FALSE);
+    $content = '<div style="width: 100%; overflow: auto; border: 1px solid #CDCDCD;">';
+    $content .= ob_get_clean();
+    $content .= '</div>';
+  }
+
+  _qdrupal_restore_drupal_error_handler();
+
   return $content;
 }
 
-/**
- * Function that runs a QDrupal Draft
- */ 
-function qdrupal_application_drafts($shortname) {
-  $args = func_get_args();
-	array_shift($args); // Pull the node off the top
-	
-	$app = qdrupal_application_load_by_name($shortname);
-	
-  foreach($args as $k => $item) {
-    if(preg_match('/[^\/,-_;a-z0-9*]/i', $args[$k])) {
-      unset($args[$k]);
-    }
-    elseif(trim($args[$k]) == "") {
-      unset($args[$k]);
-    }
-  }
-
-  // if there are no additional arguments, display form draft index
-  if(sizeof($args) == 0) {
-    qdrupal_prepend($app);
-    drupal_set_title($app->title . " Drafts");
-    
-    drupal_set_breadcrumb(array( l(t('Home'),NULL), 
-                                l(t('QDrupal Applications'),'qdrupal/applications'),
-                                l($app->title,'qdrupal/applications/'.$app->shortname),
-                                l('Drafts','qdrupal/applications/'.$app->shortname.'/drafts')
-                                ));
-
-    // Iterate through the files in this "form_drafts" folder, looking for files that end in _edit.php or _list.php
-    $draft_suffixes = array('_edit.php', '_list.php', '_combo.php');
-    $drafts = array();
-    $drafts_dir = opendir(__DOCROOT__ . __FORM_DRAFTS__);
-    while ($filename = readdir($drafts_dir)) {
-      if (($filename != '.') && ($filename != '..')) {
-        $draft_found = false;
-        foreach ($draft_suffixes as $strSuffix) {
-          if ((!$draft_found) && (substr($filename, strlen($filename) - strlen($strSuffix)) == $strSuffix)) {
-            $filename = substr($filename, 0, strlen($filename) - strlen($strSuffix));
-            $draft_found = true;
-          }
-        }
-        if ($draft_found)
-          $drafts[$filename] = true;
-      }
-    }
-
-    // Sort the list of objects
-    ksort($drafts);
-    $out = <<<OUT
-      <table>
-        <thead><th>Objects</th><th>Operations</th></thead>
-        <tbody>
-OUT;
-
-    $dir = $node->nid;
-    $class = 'even';
-    foreach ($drafts as $draft => $val) {
-      ($class == 'odd') ? $class = 'even' : $class = 'odd';
-      $out .= sprintf('<tr class="%s"><td><b>%s</b><td><a href="%s/%s/list">%s</a> &nbsp;|&nbsp; <a href="%s/%s/edit">%s</a></td></tr>', $class,
-         $draft,request_uri(),$draft, QApplication::Translate('View List'), request_uri(),$draft, QApplication::Translate('Create New'));
-    }
-    $out .= <<<OUT
-      </tbody>
-    </table>
-OUT;
-    print $out;
-  } else {
-    qdrupal_prepend($app);
-    drupal_set_title(ucfirst($args[0]) . " " . ucfirst($args[1]) . " Draft");
-		drupal_set_breadcrumb(array(
-      l(t('Home'),NULL),
-      l(t('QDrupal Applications'),'qdrupal/applications'),
-      l($app->title,'qdrupal/applications/'.$app->shortname),
-      l('Drafts','qdrupal/applications/'.$app->shortname.'/drafts'),
-      l(ucfirst($args[0]),'qdrupal/applications/'.$app->shortname.'/drafts/'.$args[0].'/'.$args[1]),
-      l(ucfirst($args[1]),'qdrupal/applications/'.$app->shortname.'/drafts/'.$args[0].'/'.$args[1])
-    ));
-
-    $drafts = QDRUPAL_APPLICATION_PATH . DS . basename(__FORM_DRAFTS__) . DS;
-    $page = $drafts . $args[0] . '_' . $args[1] . '.php';
-
-    if(!file_exists($page)) {
-      drupal_not_found($page);
-      return $page . print_r($args);
-    }
-
-    require_once($page);
-  }
-  
-  _qdrupal_restore_drupal_error_handler();
-  return ob_get_clean();
+function qdrupal_verify_qform($form_path) {
+  firep($form_path,"form-path");
+  return TRUE;
 }
-

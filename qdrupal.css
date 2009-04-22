@@ -22,3 +22,10 @@
   float: left;
   padding-right: 2em;
 }
+
+/* This is to fix a glitch in the AHAH throbber
+  that a qdrupal form uses, nothing to do with
+  qcube elements */
+.form-item .description {
+	clear: both;
+}

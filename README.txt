@@ -16,5 +16,6 @@ difficult, so Qcubed is a "compatible" branch of the Qcubed framework.
 For more information about Drupal, please visit http://www.drupal.org.
 
 Authors: 
-  Mike Hostetler, A Mountain Top, LLC, http://amountaintop.com
+  Mike Hostetler, A Mountain Top, LLC, http://amountaintop.com/
   Cliff Meece, http://abeedoo.com
+  Rob Burns, A Mountain Top, LLC
