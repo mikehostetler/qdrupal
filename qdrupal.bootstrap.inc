@@ -188,7 +188,6 @@ function _qdrupal_define_application_databases($aid) {
       $count++;
     }
   } 
-  /*
   else {
     global $db_url;
     if (is_array($db_url)) {
@@ -219,7 +218,6 @@ function _qdrupal_define_application_databases($aid) {
       'password' => urldecode($drupal_db['pass']),
       'profiling' => FALSE)));
   }
-  */
 }
 
 function _qdrupal_error_handler($errno, $errstr, $errfile, $errline, $blnExit = TRUE) {
