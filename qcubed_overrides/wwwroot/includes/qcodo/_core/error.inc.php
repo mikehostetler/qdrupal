@@ -54,7 +54,7 @@
 
 		// Call to display the Error Page (as defined in configuration.inc.php)
 		require(__DOCROOT__ . ERROR_PAGE_PATH);
-		exit();
+		//exit();
 	}
 
 	function QcodoHandleError($__exc_errno, $__exc_errstr, $__exc_errfile, $__exc_errline, $__exc_errcontext) {
@@ -90,6 +90,7 @@
 				$__exc_strObjectType = "E_PARSE";
 				break;
 			case E_NOTICE:
+				return;
 				$__exc_strObjectType = "E_NOTICE";
 				break;
 			case E_STRICT:
@@ -150,6 +151,6 @@
 
 		// Call to display the Error Page (as defined in configuration.inc.php)
 		require(__DOCROOT__ . ERROR_PAGE_PATH);
-		exit();
+		//exit();
 	}
 ?>
