@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Function that runs a QDrupal Draft

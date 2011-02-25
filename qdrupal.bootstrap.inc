@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Bootstrap qcubed into drupal

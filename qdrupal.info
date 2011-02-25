@@ -1,4 +1,3 @@
-; $Id$
 
 name = QDrupal Core
 description = Integration layer between Qcubed and Drupal

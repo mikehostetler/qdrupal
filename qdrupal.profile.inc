@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function qdrupal_profile_overview($app) {
   drupal_set_title($app->title);
